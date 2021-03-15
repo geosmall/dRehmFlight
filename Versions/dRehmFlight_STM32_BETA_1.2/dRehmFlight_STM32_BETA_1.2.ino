@@ -565,6 +565,7 @@ void IMUinit() {
    * Don't worry about how this works
    */
   #if defined USE_MPU6050_I2C
+
     Wire.begin();
     Wire.setClock(1000000); //Note this is 2.5 times the spec sheet 400 kHz max...
     
@@ -609,6 +610,7 @@ void IMUinit() {
     mpu6000.setSpeedSPI(HIGH);
 
   #elif defined USE_MPU9250_SPI
+
     int status = mpu9250.begin();    
 
     if (status < 0) {
@@ -628,6 +630,7 @@ void IMUinit() {
     mpu9250.setMagCalY(MagErrorY, MagScaleY);
     mpu9250.setMagCalZ(MagErrorZ, MagScaleZ);
     mpu9250.setSrd(0); //sets gyro and accel read to 1khz, magnetometer read to 100hz
+
   #endif
 }
 
@@ -645,6 +648,8 @@ void getIMUdata() {
 
   #if defined USE_MPU6050_I2C
     mpu6050.getMotion6(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ);
+  #elif defined USE_MPU6000_SPI
+    mpu6000.getMotion6(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ);
   #elif defined USE_MPU9250_SPI
     mpu9250.getMotion9(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ, &MgX, &MgY, &MgZ);
   #endif
@@ -712,6 +717,8 @@ void calculate_IMU_error() {
   while (c < 12000) {
     #if defined USE_MPU6050_I2C
       mpu6050.getMotion6(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ);
+    #elif defined USE_MPU6000_SPI
+      mpu6000.getMotion6(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ);
     #elif defined USE_MPU9250_SPI
       mpu9250.getMotion9(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ, &MgX, &MgY, &MgZ);
     #endif
@@ -775,8 +782,8 @@ void Madgwick(float gx, float gy, float gz, float ax, float ay, float az, float 
   float _2q0mx, _2q0my, _2q0mz, _2q1mx, _2bx, _2bz, _4bx, _4bz, _2q0, _2q1, _2q2, _2q3, _2q0q2, _2q2q3, q0q0, q0q1, q0q2, q0q3, q1q1, q1q2, q1q3, q2q2, q2q3, q3q3;
   float mholder;
 
-  //use 6DOF algorithm if MPU6050 is being used
-  #if defined USE_MPU6050_I2C 
+  //use 6DOF algorithm if MPU6050/MPU6000 is being used
+  #if defined (USE_MPU6050_I2C) || defined (USE_MPU6000_SPI)
     Madgwick6DOF(gx, gy, gz, ax, ay, az, invSampleFreq);
     return;
   #endif

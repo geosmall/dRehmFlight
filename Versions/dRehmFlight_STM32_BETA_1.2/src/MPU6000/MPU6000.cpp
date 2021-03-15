@@ -49,7 +49,10 @@ void MPU6000::fullDeviceReset()
   // 2. Wait 100ms
   delay(100);
   // 3. Set GYRO_RESET = ACCEL_RESET = TEMP_RESET = 1 (register SIGNAL_PATH_RESET)
-  uint8_t bitsToWrite = (MPU6000_PATHRESET_GYRO_RESET_BIT | MPU6000_PATHRESET_ACCEL_RESET_BIT | MPU6000_PATHRESET_TEMP_RESET_BIT);
+  uint8_t bitsToWrite =
+    (1 << MPU6000_PATHRESET_GYRO_RESET_BIT) |
+    (1 << MPU6000_PATHRESET_ACCEL_RESET_BIT) |
+    (1 << MPU6000_PATHRESET_TEMP_RESET_BIT);
   SPIdev_writeBits(devAddr, MPU6000_RA_SIGNAL_PATH_RESET, 7, 8, bitsToWrite);
   // resetGyroscopePath();
   // resetAccelerometerPath();
@@ -70,7 +73,7 @@ void MPU6000::setSpeedSPI(uint32_t ulVal)
   spi_init(devAddr, _spiSpeed, _spiMode, _spiMsb);
 }
 
-/** Verify the I2C connection.
+/** Verify the SPI connection.
  * Make sure the device is connected and responds as expected.
  * @return True if connection is valid, false otherwise
  */
