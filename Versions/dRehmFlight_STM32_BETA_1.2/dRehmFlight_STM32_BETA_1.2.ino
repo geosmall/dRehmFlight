@@ -242,40 +242,41 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 
 // PA10 - RX
 
-// PB6 - S1-IN
-// PB5 - S2-IN
-// PB0 - S3-IN
-// PB1 - S4-IN
-// PA0 - S5-IN
-// PA1 - S6-IN
+// PB0  - S1-IN
+// PB1  - S2-IN
+// PA3  - S3-IN
+// PA2  - S4-IN
+// PA1  - S5-IN
+// PA0  - S6-IN
 
-// PB9 - S1-OUT
-// PB8 - S2-OUT
-// PB7 - S3-OUT
-// PA8 - S4-OUT
-// PB4 - S5-OUT
-// PA2 - S6-OUT
+// PB14 - S1-OUT
+// PB15 - S2-OUT
+// PC6  - S3-OUT
+// PC7  - S4-OUT
+// PC8  - S5-OUT
+// PC9  - S6-OUT
 
-//NOTE: Pin 13 is reserved for onboard LED, pins 18 and 19 are reserved for the MPU6050 IMU for default setup
+//NOTE: Pin 13 is reserved for onboard LED, pins PB14/PB15/PB10/PB1 are reserved for the MPU6000 IMU SPI for default setup
 
 //Radio:
-//Note: If using SBUS, connect to pin 21 (RX5)
-const int ch1Pin = PB6; //throttle
-const int ch2Pin = PB5; //ail
-const int ch3Pin = PB0; //ele
-const int ch4Pin = PB1; //rudd
-const int ch5Pin = PA0; //gear (throttle cut)
-const int ch6Pin = PA1; //aux1 (free aux channel)
+//Note: If using SBUS, connect to pin PA10 (USART1_RX)
+const int ch1Pin = PB0;   // throttle
+const int ch2Pin = PB5;   // aileron
+const int ch3Pin = PB0;   // elevator
+const int ch4Pin = PB1;   // rudder
+const int ch5Pin = PA0;   // gear (throttle cut)
+const int ch6Pin = PA1;   // aux1 (free aux channel)
 
-const int PPM_Pin = PA10;
+const int PPM_Pin = PA10; // also USART1_RX
 
 //OneShot125 ESC pin outputs:
-const int m1Pin = PB9;
-const int m2Pin = PB8;
-const int m3Pin = PB7;
-const int m4Pin = PA8;
-const int m5Pin = PB4;
-const int m6Pin = PA2;
+const int m1Pin = PB14;
+const int m2Pin = PB15;
+const int m3Pin = PC6;
+const int m4Pin = PC7;
+const int m5Pin = PC8;
+const int m6Pin = PC9;
+
 //PWM servo or ESC outputs:
 const int servo1Pin = 6;
 const int servo2Pin = 7;
