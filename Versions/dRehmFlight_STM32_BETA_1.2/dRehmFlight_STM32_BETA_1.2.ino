@@ -46,14 +46,14 @@ RcGroups 'jihlein' - IMU implementation overhaul + SBUS implementation
 //========================================================================================================================//
 
 //Uncomment only one receiver type
-//#define USE_PWM_RX
+//#define USE_PWM_RX  // old school PWM RX not supported on STM32
 //#define USE_PPM_RX
 #define USE_SBUS_RX
 
 //Uncomment only one IMU
-//#define USE_MPU6050_I2C //default
+//#define USE_MPU6050_I2C // MPU6050 not supported on STM32
 #define USE_MPU6000_SPI
-//#define USE_MPU9250_SPI
+//#define USE_MPU9250_SPI // MPU9250 not supported on STM32
 
 //Uncomment only one full scale gyro range (deg/sec)
 #define GYRO_250DPS //default
@@ -261,12 +261,12 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 
 //Radio:
 //Note: If using SBUS, connect to pin PA10 (USART1_RX)
-const int ch1Pin = PB0;   // throttle
-const int ch2Pin = PB5;   // aileron
-const int ch3Pin = PB0;   // elevator
-const int ch4Pin = PB1;   // rudder
-const int ch5Pin = PA0;   // gear (throttle cut)
-const int ch6Pin = PA1;   // aux1 (free aux channel)
+// const int ch1Pin = PB0;   // throttle
+// const int ch2Pin = PB5;   // aileron
+// const int ch3Pin = PB0;   // elevator
+// const int ch4Pin = PB1;   // rudder
+// const int ch5Pin = PA0;   // gear (throttle cut)
+// const int ch6Pin = PA1;   // aux1 (free aux channel)
 
 const int PPM_Pin = PA10; // also USART1_RX
 
@@ -279,13 +279,14 @@ const int m5Pin = PC8;
 const int m6Pin = PC9;
 
 //PWM servo or ESC outputs:
-const int servo1Pin = 6;
-const int servo2Pin = 7;
-const int servo3Pin = 8;
-const int servo4Pin = 9;
-const int servo5Pin = 10;
-const int servo6Pin = 11;
-const int servo7Pin = 12;
+const int servo1Pin = PB0;  // repurpose S1-IN
+const int servo2Pin = PB1;  // repurpose S2-IN
+const int servo3Pin = PA3;  // repurpose S3-IN
+const int servo4Pin = PA2;  // repurpose S4-IN
+const int servo5Pin = PA1;  // repurpose S5-IN
+const int servo6Pin = PA0;  // repurpose S6-IN
+const int servo7Pin = PB13; // repurpose FlexiIO pin 4
+const int servo8Pin = PB12; // repurpose FlexiIO pin 3
 
 #include <Servo.h> //commanding any extra actuators, installed as part of Arduino_Core_STM32
 
@@ -296,6 +297,7 @@ Servo servo4;
 Servo servo5;
 Servo servo6;
 Servo servo7;
+Servo servo8;
 
 #elif defined(ARDUINO_TEENSY40)
 
