@@ -386,9 +386,9 @@
 class MPU6000
 {
   public:
-    MPU6000(spi_t &spiBus);
+    MPU6000(spi_stm32_t &spiBus);
 
-    void initialize(PinName pinCS, uint32_t spiLS, uint32_t spiHS, spi_mode_e mode, uint8_t msb);
+    void initialize(PinName pinCS, uint32_t spiLS, uint32_t spiHS, spi_stm32_mode_e mode, uint8_t msb);
     bool testConnection();
 
     void fullDeviceReset();
@@ -984,18 +984,18 @@ class MPU6000
 #endif
 
   private:
-    // @param  devAddr : pointer to spi_t structure
+    // @param  devAddr : pointer to spi_stm32_t structure
     // @param  _mpuCS : MPU CS pin
     // @param  _spiLowSpeed : spi low output speed, used for setup
     // @param  _spiHighSpeed : spi high output speed, used for fast read
     // @param  _spiMode : one of the spi modes
     // @param  _spi_Msb : set to 1 in msb first
-    spi_t *devAddr;
+    spi_stm32_t *devAddr;
     PinName _mpuCS;
     uint32_t _spiLowSpeed;
     uint32_t _spiHighSpeed;
     uint32_t _spiSpeed;
-    spi_mode_e _spiMode;
+    spi_stm32_mode_e _spiMode;
     uint8_t _spiMsb;
     uint8_t buffer[14];
 #if defined(MPU6000_INCLUDE_DMP_MOTIONAPPS20) or defined(MPU6000_INCLUDE_DMP_MOTIONAPPS41)

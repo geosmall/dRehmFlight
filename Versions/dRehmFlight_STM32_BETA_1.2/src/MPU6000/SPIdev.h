@@ -42,7 +42,7 @@ SOFTWARE.
 //#define SPIDEV_SERIAL_DEBUG
 
 #include "Arduino.h"
-#include "spi_com.h"
+#include "spi_stm32.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -62,23 +62,23 @@ static bool DataOrder;
 void SPIdev_setCS(PinName pin);
 void SPIdev_setDataOrder(bool spiMsb);
 
-int8_t SPIdev_readBit(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *data);
-int8_t SPIdev_readBitW(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t *data);
-int8_t SPIdev_readBits(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t *data);
-int8_t SPIdev_readBitsW(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint16_t *data);
-int8_t SPIdev_readByte(spi_t *devAddr, uint8_t regAddr, uint8_t *data);
-int8_t SPIdev_readWord(spi_t *devAddr, uint8_t regAddr, uint16_t *data);
-int8_t SPIdev_readBytes(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t *data);
-int8_t SPIdev_readWords(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint16_t *data);
+int8_t SPIdev_readBit(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *data);
+int8_t SPIdev_readBitW(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t *data);
+int8_t SPIdev_readBits(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t *data);
+int8_t SPIdev_readBitsW(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint16_t *data);
+int8_t SPIdev_readByte(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t *data);
+int8_t SPIdev_readWord(spi_stm32_t *devAddr, uint8_t regAddr, uint16_t *data);
+int8_t SPIdev_readBytes(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t *data);
+int8_t SPIdev_readWords(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t length, uint16_t *data);
 
-bool SPIdev_writeBit(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t data);
-bool SPIdev_writeBitW(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t data);
-bool SPIdev_writeBits(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t data);
-bool SPIdev_writeBitsW(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint16_t data);
-bool SPIdev_writeByte(spi_t *devAddr, uint8_t regAddr, uint8_t data);
-bool SPIdev_writeWord(spi_t *devAddr, uint8_t regAddr, uint16_t data);
-bool SPIdev_writeBytes(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t *data);
-bool SPIdev_writeWords(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint16_t *data);
+bool SPIdev_writeBit(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t data);
+bool SPIdev_writeBitW(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t data);
+bool SPIdev_writeBits(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t data);
+bool SPIdev_writeBitsW(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint16_t data);
+bool SPIdev_writeByte(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t data);
+bool SPIdev_writeWord(spi_stm32_t *devAddr, uint8_t regAddr, uint16_t data);
+bool SPIdev_writeBytes(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t *data);
+bool SPIdev_writeWords(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t length, uint16_t *data);
 
 #ifdef __cplusplus
 }

@@ -8,7 +8,7 @@
 #endif
 
 /* MPU6000 object, input the SPIdev bus */
-MPU6000::MPU6000(spi_t &bus)
+MPU6000::MPU6000(spi_stm32_t &bus)
 {
   devAddr = &bus;   // SPIdev bus
 }
@@ -20,7 +20,7 @@ MPU6000::MPU6000(spi_t &bus)
  * the clock source to use the X Gyro for reference, which is slightly better than
  * the default internal clock source.
  */
-void MPU6000::initialize(PinName pinCS, uint32_t spiLS, uint32_t spiHS, spi_mode_e mode, uint8_t msb)
+void MPU6000::initialize(PinName pinCS, uint32_t spiLS, uint32_t spiHS, spi_stm32_mode_e mode, uint8_t msb)
 {
   _mpuCS = pinCS;
   _spiLowSpeed = spiLS;
@@ -32,7 +32,7 @@ void MPU6000::initialize(PinName pinCS, uint32_t spiLS, uint32_t spiHS, spi_mode
   SPIdev_setDataOrder(_spiMsb);
   setSpeedSPI(LOW);
 
-  spi_init(devAddr, _spiSpeed, _spiMode, _spiMsb);
+  spi_stm32_init(devAddr, _spiSpeed, _spiMode, _spiMsb);
 
   fullDeviceReset();
 
@@ -70,7 +70,7 @@ void MPU6000::setSpeedSPI(uint32_t ulVal)
   } else {
     _spiSpeed = _spiLowSpeed;
   }
-  spi_init(devAddr, _spiSpeed, _spiMode, _spiMsb);
+  spi_stm32_init(devAddr, _spiSpeed, _spiMode, _spiMsb);
 }
 
 /** Verify the SPI connection.

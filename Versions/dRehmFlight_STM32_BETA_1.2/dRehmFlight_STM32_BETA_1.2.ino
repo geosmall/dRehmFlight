@@ -75,9 +75,9 @@ RcGroups 'jihlein' - IMU implementation overhaul + SBUS implementation
 
 //REQUIRED LIBRARIES (included with download in main sketch folder)
 
-#include <Wire.h>     //I2c communication
-#include <SPI.h>      //SPI communication
-//#include <PWMServo.h> //commanding any extra actuators, installed with teensyduino installer
+// #include <Wire.h>     //I2c communication
+// #include <SPI.h>      //SPI communication
+// #include <PWMServo.h> //commanding any extra actuators, installed with teensyduino installer
 
 #if defined USE_SBUS_RX
   #include "src/SBUS/SBUS.h"   //sBus interface
@@ -217,25 +217,26 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
   const PinName PIN_sclk = PB_10;
   const PinName PIN_ssel = NC;
   const PinName slaveSelect = PB_1;
+#elif defined (ARDUINO_NUCLEO_F103RB)
+  #define SERIAL_PERIPH Serial1
+  #define SPIx SPI2
+  const PinName PIN_miso = PB_14;
+  const PinName PIN_mosi = PB_15;
+  const PinName PIN_sclk = PB_10;
+  const PinName PIN_ssel = NC;
+  const PinName slaveSelect = PB_1;
 #else
   #error Undefined Board Variant
 #endif
 
-
-#if defined(USE_MPU6050_I2C)
-  #include "src/MPU6050/MPU6050.h"
-  MPU6050 mpu6050;
-#elif defined(USE_MPU6000_SPI)
+#if defined(USE_MPU6000_SPI)
   #include "src/MPU6000/MPU6000.h"
-  spi_t MPU6000_spi;
+  spi_stm32_t MPU6000_spi;
   const uint32_t SPI_LS_CLOCK =  1000000;
   const uint32_t SPI_HS_CLOCK =  6250000;
   MPU6000 mpu6000(MPU6000_spi);
-#elif defined(USE_MPU9250_SPI)
-  #include "src/MPU9250/MPU9250.h"
-  MPU9250 mpu9250(SPI, 36);
 #else
-  #error No MPU defined... 
+  #error Invalid MPU defined... 
 #endif
 
 // Revo PINOUT
@@ -297,6 +298,9 @@ Servo servo6;
 Servo servo7;
 
 #elif defined(ARDUINO_TEENSY40)
+
+#include <Wire.h>     //I2c communication
+#include <SPI.h>      //SPI communication
 
 #define SERIAL_PERIPH Serial5
 
@@ -595,7 +599,7 @@ void IMUinit() {
     MPU6000_spi.pin_sclk = PIN_sclk;
     MPU6000_spi.pin_ssel = PIN_ssel;
 
-    mpu6000.initialize(slaveSelect, SPI_LS_CLOCK, SPI_HS_CLOCK, SPI_MODE_3, MSBFIRST);
+    mpu6000.initialize(slaveSelect, SPI_LS_CLOCK, SPI_HS_CLOCK, SPI_STM32_MODE_3, MSBFIRST);
     mpu6000.setSpeedSPI(LOW);
 
     if (mpu6000.testConnection() == false) {

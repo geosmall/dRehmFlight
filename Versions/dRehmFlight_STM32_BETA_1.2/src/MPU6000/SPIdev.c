@@ -1,6 +1,5 @@
 #include "SPIdev.h"
-#include "spi_com.h"
-#include "stm32yyxx_ll.h"
+#include "spi_stm32.h"
 
 /*
 // int8_t SPIdev_readBit(uint8_t devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *data, uint16_t timeout) {
@@ -24,40 +23,13 @@
 Steps:
 - Strip out FastWire/TwoWire etc
 - Rename 'I2Cdev::' to 'SPIdev_'
-- Rename 'uint8_t devAddr' to 'spi_t *devAddr'
+- Rename 'uint8_t devAddr' to 'spi_stm32_t *devAddr'
 - Rename ', uint16_t timeout' to ''
 - Rename ', timeout' to ''
 - Add 'SPIdev_' prefix to 'readByte'...etc
 
 */
 
-
-spi_status_e spi_LL_transfer(spi_t *obj, uint8_t *tx_buffer, uint8_t *rx_buffer, uint16_t len, uint32_t Timeout)
-{
-  spi_status_e ret = SPI_OK;
-  uint32_t tickstart;
-  SPI_TypeDef *_SPI = obj->handle.Instance;
-
-  if ((obj == NULL) || (len == 0)) {
-    return SPI_ERROR;
-  }
-  tickstart = HAL_GetTick();
-  while (len--) {
-    while (!LL_SPI_IsActiveFlag_TXE(_SPI))
-      ;
-    LL_SPI_TransmitData8(_SPI, *tx_buffer++);
-    while (!LL_SPI_IsActiveFlag_RXNE(_SPI))
-      ;
-    *rx_buffer++ = LL_SPI_ReceiveData8(_SPI);
-    if ((((HAL_GetTick() - tickstart) >= Timeout) &&
-         ((Timeout != HAL_MAX_DELAY))) ||
-        (Timeout == 0U)) {
-      ret = SPI_TIMEOUT;
-      break;
-    }
-  }
-  return ret;
-}
 
 static uint8_t tx_byte;
 static uint8_t rx_byte;
@@ -88,7 +60,7 @@ void SPIdev_setDataOrder(bool spiMsb)
  * @param timeout Optional read timeout in milliseconds (0 to disable, leave off to use default class value in SPIdev_readTimeout)
  * @return Status of read operation (true = success)
  */
-int8_t SPIdev_readBit(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *data)
+int8_t SPIdev_readBit(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *data)
 {
   uint8_t b;
   uint8_t count = SPIdev_readByte(devAddr, regAddr, &b);
@@ -104,7 +76,7 @@ int8_t SPIdev_readBit(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t *
  * @param timeout Optional read timeout in milliseconds (0 to disable, leave off to use default class value in SPIdev_readTimeout)
  * @return Status of read operation (true = success)
  */
-int8_t SPIdev_readBitW(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t *data)
+int8_t SPIdev_readBitW(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t *data)
 {
   uint16_t b;
   uint8_t count = SPIdev_readWord(devAddr, regAddr, &b);
@@ -121,7 +93,7 @@ int8_t SPIdev_readBitW(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t
  * @param timeout Optional read timeout in milliseconds (0 to disable, leave off to use default class value in SPIdev_readTimeout)
  * @return Status of read operation (true = success)
  */
-int8_t SPIdev_readBits(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t *data)
+int8_t SPIdev_readBits(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t *data)
 {
   // 01101001 read byte
   // 76543210 bit numbers
@@ -148,7 +120,7 @@ int8_t SPIdev_readBits(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_
  * @param timeout Optional read timeout in milliseconds (0 to disable, leave off to use default class value in SPIdev_readTimeout)
  * @return Status of read operation (1 = success, 0 = failure, -1 = timeout)
  */
-int8_t SPIdev_readBitsW(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint16_t *data)
+int8_t SPIdev_readBitsW(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint16_t *data)
 {
   // 1101011001101001 read byte
   // fedcba9876543210 bit numbers
@@ -173,7 +145,7 @@ int8_t SPIdev_readBitsW(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8
  * @param timeout Optional read timeout in milliseconds (0 to disable, leave off to use default class value in SPIdev_readTimeout)
  * @return Status of read operation (true = success)
  */
-int8_t SPIdev_readByte(spi_t *devAddr, uint8_t regAddr, uint8_t *data)
+int8_t SPIdev_readByte(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t *data)
 {
   return SPIdev_readBytes(devAddr, regAddr, 1, data);
 }
@@ -185,7 +157,7 @@ int8_t SPIdev_readByte(spi_t *devAddr, uint8_t regAddr, uint8_t *data)
  * @param timeout Optional read timeout in milliseconds (0 to disable, leave off to use default class value in SPIdev_readTimeout)
  * @return Status of read operation (true = success)
  */
-int8_t SPIdev_readWord(spi_t *devAddr, uint8_t regAddr, uint16_t *data)
+int8_t SPIdev_readWord(spi_stm32_t *devAddr, uint8_t regAddr, uint16_t *data)
 {
   return SPIdev_readWords(devAddr, regAddr, 1, data);
 }
@@ -197,7 +169,7 @@ int8_t SPIdev_readWord(spi_t *devAddr, uint8_t regAddr, uint16_t *data)
  * @param data Buffer to store read data in
  * @return Number of bytes read (-1 indicates failure)
  */
-int8_t SPIdev_readBytes(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t *data)
+int8_t SPIdev_readBytes(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t *data)
 {
 
   int8_t count;
@@ -220,12 +192,12 @@ int8_t SPIdev_readBytes(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t
   // SPI.transfer(regAddr | READ); // specify the starting register address
   // specify the starting register address
   tx_byte = (regAddr | READ);
-  spi_LL_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
+  spi_stm32_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
 
   tx_byte = 0x00;
   for (count = 0; count < length; count++) {
     // data[count] = SPI.transfer(0x00); // read the data
-    spi_LL_transfer(devAddr, &tx_byte, &data[count], 1, SPIdev_read_timeout); // read the data
+    spi_stm32_transfer(devAddr, &tx_byte, &data[count], 1, SPIdev_read_timeout); // read the data
 #ifdef SPIDEV_SERIAL_DEBUG
     Serial.print(data[count], HEX);
     if (count + 1 < length) Serial.print(" ");
@@ -255,7 +227,7 @@ int8_t SPIdev_readBytes(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t
  * @param timeout Optional read timeout in milliseconds (0 to disable, leave off to use default class value in SPIdev_readTimeout)
  * @return Number of words read (-1 indicates failure)
  */
-int8_t SPIdev_readWords(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint16_t *data)
+int8_t SPIdev_readWords(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t length, uint16_t *data)
 {
 
   int8_t count;
@@ -280,20 +252,20 @@ int8_t SPIdev_readWords(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint16_
 
   // SPI.transfer(regAddr | READ); // specify the starting register address
   tx_byte = (regAddr | READ);
-  spi_LL_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
+  spi_stm32_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
 
   tx_byte = 0x00;
   for (count = 0; count < length; count++) {
     if (msb == MSBFIRST) {
       // first byte is bits 15-8 (MSb=15)
       // data[count] = SPI.transfer(0x00) << 8; // read the data
-      spi_LL_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
+      spi_stm32_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
       data[count] = rx_byte << 8;
       msb = LSBFIRST;
     } else {
       // second byte is bits 7-0 (LSb=0)
       // data[count] |= SPI.transfer(0x00); // read the data
-      spi_LL_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
+      spi_stm32_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
       data[count] |= rx_byte;
 #ifdef SPIDEV_SERIAL_DEBUG
       Serial.print(data[count], HEX);
@@ -325,7 +297,7 @@ int8_t SPIdev_readWords(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint16_
  * @param value New bit value to write
  * @return Status of operation (true = success)
  */
-bool SPIdev_writeBit(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t data)
+bool SPIdev_writeBit(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t data)
 {
   uint8_t b;
   SPIdev_readByte(devAddr, regAddr, &b);
@@ -340,7 +312,7 @@ bool SPIdev_writeBit(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint8_t da
  * @param value New bit value to write
  * @return Status of operation (true = success)
  */
-bool SPIdev_writeBitW(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t data)
+bool SPIdev_writeBitW(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t data)
 {
   uint16_t w;
   SPIdev_readWord(devAddr, regAddr, &w);
@@ -356,7 +328,7 @@ bool SPIdev_writeBitW(spi_t *devAddr, uint8_t regAddr, uint8_t bitNum, uint16_t 
  * @param data Right-aligned value to write
  * @return Status of operation (true = success)
  */
-bool SPIdev_writeBits(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t data)
+bool SPIdev_writeBits(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint8_t data)
 {
   //      010 value to write
   // 76543210 bit numbers
@@ -386,7 +358,7 @@ bool SPIdev_writeBits(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t
  * @param data Right-aligned value to write
  * @return Status of operation (true = success)
  */
-bool SPIdev_writeBitsW(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint16_t data)
+bool SPIdev_writeBitsW(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_t length, uint16_t data)
 {
   //              010 value to write
   // fedcba9876543210 bit numbers
@@ -414,7 +386,7 @@ bool SPIdev_writeBitsW(spi_t *devAddr, uint8_t regAddr, uint8_t bitStart, uint8_
  * @param data New byte value to write
  * @return Status of operation (true = success)
  */
-bool SPIdev_writeByte(spi_t *devAddr, uint8_t regAddr, uint8_t data)
+bool SPIdev_writeByte(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t data)
 {
   return SPIdev_writeBytes(devAddr, regAddr, 1, &data);
 }
@@ -425,7 +397,7 @@ bool SPIdev_writeByte(spi_t *devAddr, uint8_t regAddr, uint8_t data)
  * @param data New word value to write
  * @return Status of operation (true = success)
  */
-bool SPIdev_writeWord(spi_t *devAddr, uint8_t regAddr, uint16_t data)
+bool SPIdev_writeWord(spi_stm32_t *devAddr, uint8_t regAddr, uint16_t data)
 {
   return SPIdev_writeWords(devAddr, regAddr, 1, &data);
 }
@@ -437,7 +409,7 @@ bool SPIdev_writeWord(spi_t *devAddr, uint8_t regAddr, uint16_t data)
  * @param data Buffer to copy new data from
  * @return Status of operation (true = success)
  */
-bool SPIdev_writeBytes(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t* data)
+bool SPIdev_writeBytes(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t* data)
 {
 
 #ifdef SPIDEV_SERIAL_DEBUG
@@ -455,7 +427,7 @@ bool SPIdev_writeBytes(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t*
 
   // SPI.transfer(regAddr); // specify the starting register address
   tx_byte = regAddr;
-  spi_LL_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
+  spi_stm32_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
 
   for (uint8_t i = 0; i < length; i++) {
 
@@ -466,7 +438,7 @@ bool SPIdev_writeBytes(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t*
 
     // SPI.transfer((uint8_t) data[i]); // send the data
     tx_byte = (uint8_t)data[i];
-    spi_LL_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
+    spi_stm32_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
 
   }
 
@@ -490,7 +462,7 @@ bool SPIdev_writeBytes(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint8_t*
  * @param data Buffer to copy new data from
  * @return Status of operation (true = success)
  */
-bool SPIdev_writeWords(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint16_t* data)
+bool SPIdev_writeWords(spi_stm32_t *devAddr, uint8_t regAddr, uint8_t length, uint16_t* data)
 {
 
 #ifdef SPIDEV_SERIAL_DEBUG
@@ -509,7 +481,7 @@ bool SPIdev_writeWords(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint16_t
 
   // SPI.transfer(regAddr); // specify the starting register address
   tx_byte = regAddr;
-  spi_LL_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
+  spi_stm32_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
 
   for (uint8_t i = 0; i < length; i++) {
 
@@ -520,11 +492,11 @@ bool SPIdev_writeWords(spi_t *devAddr, uint8_t regAddr, uint8_t length, uint16_t
 
     // SPI.transfer((uint8_t)(data[i] >> 8));     // send MSB
     tx_byte = (uint8_t)data[i] >> 8;
-    spi_LL_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
+    spi_stm32_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
 
     // SPI.transfer((uint8_t)data[i]);          // send LSB
     tx_byte = (uint8_t)data[i];
-    spi_LL_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
+    spi_stm32_transfer(devAddr, &tx_byte, &rx_byte, 1, SPIdev_read_timeout);
   }
 
   // take the CS pin high to de-select the chip:
