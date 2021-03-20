@@ -210,33 +210,94 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 #if defined(ARDUINO_ARCH_STM32)   // Arduino_Core_STM32
 
 #if defined (ARDUINO_NUCLEO_F411RE)
-  #define SERIAL_PERIPH Serial1
-  #define SPIx SPI2
-  const PinName PIN_miso = PB_14;
-  const PinName PIN_mosi = PB_15;
-  const PinName PIN_sclk = PB_10;
-  const PinName PIN_ssel = NC;
-  const PinName slaveSelect = PB_1;
+
+  #define SERIAL_SBUS Serial1
+  #define SERIAL_DEBUG_BAUD 500000
+
+  #define SPIx SPI1
+  const PinName PIN_miso = PA_6;    // YEL
+  const PinName PIN_mosi = PA_7;    // GRN
+  const PinName PIN_sclk = PA_5;    // ORG
+  const PinName PIN_ssel = NC;      // SSEL CS contolled by SW
+  const PinName slaveSelect = PA_4; // BLU
+
+  const int warningLED = PB4;
+  const int statusLED = PB5;
+
+  const int PPM_Pin = PA10; // also USART1_RX (is 5V tolerant)
+
+  //OneShot125 ESC pin outputs:
+  const int m1Pin = PB14;
+  const int m2Pin = PB15;
+  const int m3Pin = PC6;
+  const int m4Pin = PC7;
+  const int m5Pin = PC8;
+  const int m6Pin = PC9;
+
+  //PWM servo or ESC outputs:
+  const int servo1Pin = PB0;  // repurpose S1-IN
+  const int servo2Pin = PB1;  // repurpose S2-IN
+  const int servo3Pin = PC0;  // repurpose S3-IN // GLS Was PA3
+  const int servo4Pin = PC1;  // repurpose S4-IN // GLS Was PA2
+  const int servo5Pin = PA1;  // repurpose S5-IN
+  const int servo6Pin = PA0;  // repurpose S6-IN
+  const int servo7Pin = PB13; // repurpose FlexiIO pin 4
+  const int servo8Pin = PB12; // repurpose FlexiIO pin 3
+
 #elif defined (ARDUINO_NUCLEO_F103RB)
-  #define SERIAL_PERIPH Serial1
+
+  #define SERIAL_SBUS Serial1
+  #define SERIAL_DEBUG_BAUD 230400
+
   #define SPIx SPI2
   const PinName PIN_miso = PB_14;
   const PinName PIN_mosi = PB_15;
   const PinName PIN_sclk = PB_10;
-  const PinName PIN_ssel = NC;
+  const PinName PIN_ssel = NC;   // SSEL CS contolled by SW
   const PinName slaveSelect = PB_1;
+
+  const int warningLED = PB4;
+  const int statusLED = PB5;
+
+  const int PPM_Pin = PA10; // also USART1_RX (is 5V tolerant)
+
+  //OneShot125 ESC pin outputs:
+  const int m1Pin = PB14;
+  const int m2Pin = PB15;
+  const int m3Pin = PC6;
+  const int m4Pin = PC7;
+  const int m5Pin = PC8;
+  const int m6Pin = PC9;
+
+  //PWM servo or ESC outputs:
+  const int servo1Pin = PB0;  // repurpose S1-IN
+  const int servo2Pin = PB1;  // repurpose S2-IN
+  const int servo3Pin = PC0;  // repurpose S3-IN // GLS Was PA3
+  const int servo4Pin = PC1;  // repurpose S4-IN // GLS Was PA2
+  const int servo5Pin = PA1;  // repurpose S5-IN
+  const int servo6Pin = PA0;  // repurpose S6-IN
+  const int servo7Pin = PB13; // repurpose FlexiIO pin 4
+  const int servo8Pin = PB12; // repurpose FlexiIO pin 3
+
 #else
+
   #error Undefined Board Variant
+
 #endif
 
+
 #if defined(USE_MPU6000_SPI)
+
   #include "src/MPU6000/MPU6000.h"
   spi_stm32_t MPU6000_spi;
   const uint32_t SPI_LS_CLOCK =  1000000;
   const uint32_t SPI_HS_CLOCK =  6250000;
   MPU6000 mpu6000(MPU6000_spi);
+
 #else
+
   #error Invalid MPU defined... 
+
 #endif
 
 // Revo PINOUT
@@ -257,36 +318,7 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 // PC8  - S5-OUT
 // PC9  - S6-OUT
 
-//NOTE: Pin 13 is reserved for onboard LED, pins PB14/PB15/PB10/PB1 are reserved for the MPU6000 IMU SPI for default setup
-
-//Radio:
-//Note: If using SBUS, connect to pin PA10 (USART1_RX)
-// const int ch1Pin = PB0;   // throttle
-// const int ch2Pin = PB5;   // aileron
-// const int ch3Pin = PB0;   // elevator
-// const int ch4Pin = PB1;   // rudder
-// const int ch5Pin = PA0;   // gear (throttle cut)
-// const int ch6Pin = PA1;   // aux1 (free aux channel)
-
-const int PPM_Pin = PA10; // also USART1_RX
-
-//OneShot125 ESC pin outputs:
-const int m1Pin = PB14;
-const int m2Pin = PB15;
-const int m3Pin = PC6;
-const int m4Pin = PC7;
-const int m5Pin = PC8;
-const int m6Pin = PC9;
-
-//PWM servo or ESC outputs:
-const int servo1Pin = PB0;  // repurpose S1-IN
-const int servo2Pin = PB1;  // repurpose S2-IN
-const int servo3Pin = PA3;  // repurpose S3-IN
-const int servo4Pin = PA2;  // repurpose S4-IN
-const int servo5Pin = PA1;  // repurpose S5-IN
-const int servo6Pin = PA0;  // repurpose S6-IN
-const int servo7Pin = PB13; // repurpose FlexiIO pin 4
-const int servo8Pin = PB12; // repurpose FlexiIO pin 3
+//NOTE: Pins PA7/PA6/PA5/PA4 are reserved for the MPU6000 IMU SPI for Revo clone setup
 
 #include <Servo.h> //commanding any extra actuators, installed as part of Arduino_Core_STM32
 
@@ -299,12 +331,15 @@ Servo servo6;
 Servo servo7;
 Servo servo8;
 
+const unsigned long PRINT_COUNT = 10000;
+const unsigned long RADIO_DATA_PRINT_COUNT = 20000;
+
 #elif defined(ARDUINO_TEENSY40)
 
 #include <Wire.h>     //I2c communication
 #include <SPI.h>      //SPI communication
 
-#define SERIAL_PERIPH Serial5
+#define SERIAL_SBUS Serial5
 
 #if defined USE_MPU6050_I2C
   #include "src/MPU6050/MPU6050.h"
@@ -317,6 +352,8 @@ Servo servo8;
 #endif
 
 //NOTE: Pin 13 is reserved for onboard LED, pins 18 and 19 are reserved for the MPU6050 IMU for default setup
+const int statusLED = 13;
+
 //Radio:
 //Note: If using SBUS, connect to pin 21 (RX5)
 const int ch1Pin = 15; //throttle
@@ -377,7 +414,7 @@ unsigned long channel_1_pwm, channel_2_pwm, channel_3_pwm, channel_4_pwm, channe
 unsigned long channel_1_pwm_prev, channel_2_pwm_prev, channel_3_pwm_prev, channel_4_pwm_prev;
 
 #if defined USE_SBUS_RX
-  SBUS sbus(SERIAL_PERIPH);
+  SBUS sbus(SERIAL_SBUS);
   uint16_t sbusChannels[16];
   bool sbusFailSafe;
   bool sbusLostFrame;
@@ -420,11 +457,17 @@ int s1_command_PWM, s2_command_PWM, s3_command_PWM, s4_command_PWM, s5_command_P
 //========================================================================================================================//
 
 void setup() {
+
+#if defined(ARDUINO_TEENSY40)
   Serial.begin(500000); //usb serial
   delay(3000); //3 second delay for plugging in battery before IMU calibration begins, feel free to comment this out to reduce boot time
-  
-  //Initialize all pins
-  pinMode(13, OUTPUT); //pin 13 LED blinker on board, do not modify 
+#else
+  Serial.begin(SERIAL_DEBUG_BAUD); //debug serial
+  Serial.println("Initializing...");
+  delay(1000);
+#endif
+  //Initialize all pins  
+  pinMode(statusLED, OUTPUT); //LED status blinker on board 
   pinMode(m1Pin, OUTPUT);
   pinMode(m2Pin, OUTPUT);
   pinMode(m3Pin, OUTPUT);
@@ -440,7 +483,7 @@ void setup() {
   servo7.attach(servo7Pin, 900, 2100);
 
   //Set built in LED to turn on to signal startup & not to disturb vehicle during IMU calibration
-  digitalWrite(13, HIGH);
+  digitalWrite(statusLED, HIGH);
 
   delay(10);
 
@@ -517,7 +560,7 @@ void loop() {
   //printGyroData();      //prints filtered gyro data direct from IMU (expected: ~ -250 to 250, 0 at rest)
   //printAccelData();     //prints filtered accelerometer data direct from IMU (expected: ~ -2 to 2; x,y 0 when level, z 1 when level)
   //printMagData();       //prints filtered magnetometer data direct from IMU (expected: ~ -300 to 300)
-  //printRollPitchYaw();  //prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
+  printRollPitchYaw();  //prints roll, pitch, and yaw angles in degrees from Madgwick filter (expected: degrees, 0 when level)
   //printPIDoutput();     //prints computed stabilized PID variables from controller and desired setpoint (expected: ~ -1 to 1)
   //printMotorCommands(); //prints the values being written to the motors (expected: 120 to 250)
   //printServoCommands(); //prints the values being written to the servos (expected: 0 to 180)
@@ -1549,7 +1592,7 @@ void loopBlink() {
    */
   if (current_time - blink_counter > blink_delay) {
     blink_counter = micros();
-    digitalWrite(13, blinkAlternate); //pin 13 is built in LED
+    digitalWrite(statusLED, blinkAlternate);
     
     if (blinkAlternate == 1) {
       blinkAlternate = 0;
@@ -1565,15 +1608,15 @@ void loopBlink() {
 void setupBlink(int numBlinks,int upTime, int downTime) {
   //DESCRIPTION: Simple function to make LED on board blink as desired
   for (int j = 1; j<= numBlinks; j++) {
-    digitalWrite(13, LOW);
+    digitalWrite(statusLED, LOW);
     delay(downTime);
-    digitalWrite(13, HIGH);
+    digitalWrite(statusLED, HIGH);
     delay(upTime);
   }
 }
 
 void printRadioData() {
-  if (current_time - print_counter > 10000) {
+  if (current_time - print_counter > RADIO_DATA_PRINT_COUNT) {
     print_counter = micros();
     Serial.print(F(" CH1: "));
     Serial.print(channel_1_pwm);
@@ -1591,7 +1634,7 @@ void printRadioData() {
 }
 
 void printDesiredState() {
-  if (current_time - print_counter > 10000) {
+  if (current_time - print_counter > PRINT_COUNT) {
     print_counter = micros();
     Serial.print(F("thro_des: "));
     Serial.print(thro_des);
@@ -1605,7 +1648,7 @@ void printDesiredState() {
 }
 
 void printGyroData() {
-    if (current_time - print_counter > 10000) {
+    if (current_time - print_counter > PRINT_COUNT) {
     print_counter = micros();
     Serial.print(F("GyroX: "));
     Serial.print(GyroX);
@@ -1617,7 +1660,7 @@ void printGyroData() {
 }
 
 void printAccelData() {
-    if (current_time - print_counter > 10000) {
+    if (current_time - print_counter > PRINT_COUNT) {
     print_counter = micros();
     Serial.print(F("AccX: "));
     Serial.print(AccX);
@@ -1629,7 +1672,7 @@ void printAccelData() {
 }
 
 void printMagData() {
-    if (current_time - print_counter > 10000) {
+    if (current_time - print_counter > PRINT_COUNT) {
     print_counter = micros();
     Serial.print(F("MagX: "));
     Serial.print(MagX);
@@ -1641,7 +1684,7 @@ void printMagData() {
 }
 
 void printRollPitchYaw() {
-    if (current_time - print_counter > 10000) {
+    if (current_time - print_counter > PRINT_COUNT) {
     print_counter = micros();
     Serial.print(F("roll: "));
     Serial.print(roll_IMU);
@@ -1653,7 +1696,7 @@ void printRollPitchYaw() {
 }
 
 void printPIDoutput() {
-    if (current_time - print_counter > 10000) {
+    if (current_time - print_counter > PRINT_COUNT) {
     print_counter = micros();
     Serial.print(F("roll_PID: "));
     Serial.print(roll_PID);
@@ -1665,7 +1708,7 @@ void printPIDoutput() {
 }
 
 void printMotorCommands() {
-    if (current_time - print_counter > 10000) {
+    if (current_time - print_counter > PRINT_COUNT) {
     print_counter = micros();
     Serial.print(F("m1_command: "));
     Serial.print(m1_command_PWM);
@@ -1683,7 +1726,7 @@ void printMotorCommands() {
 }
 
 void printServoCommands() {
-    if (current_time - print_counter > 10000) {
+    if (current_time - print_counter > PRINT_COUNT) {
     print_counter = micros();
     Serial.print(F("s1_command: "));
     Serial.print(s1_command_PWM);
@@ -1703,7 +1746,7 @@ void printServoCommands() {
 }
 
 void printLoopRate() {
-    if (current_time - print_counter > 10000) {
+    if (current_time - print_counter > PRINT_COUNT) {
     print_counter = micros();
     Serial.print(F("dt = "));
     Serial.println(dt*1000000.0);
