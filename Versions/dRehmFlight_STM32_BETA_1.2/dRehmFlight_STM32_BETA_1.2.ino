@@ -209,7 +209,30 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 
 #if defined(ARDUINO_ARCH_STM32)   // Arduino_Core_STM32
 
-#if defined (ARDUINO_NUCLEO_F411RE)
+#if defined (ARDUINO_GENERIC_F405RG)
+
+#define LED_ON(__PIN__)   digitalWrite(__PIN__, LOW);
+#define LED_OFF(__PIN__)   digitalWrite(__PIN__, HIGH);
+
+// Revo PINOUT
+
+// PA10 - RX
+
+// PB0  - S1-IN
+// PB1  - S2-IN
+// PA3  - S3-IN
+// PA2  - S4-IN
+// PA1  - S5-IN
+// PA0  - S6-IN
+
+// PB14 - S1-OUT
+// PB15 - S2-OUT
+// PC6  - S3-OUT
+// PC7  - S4-OUT
+// PC8  - S5-OUT
+// PC9  - S6-OUT
+
+//NOTE: Pins PA7/PA6/PA5/PA4 are reserved for the MPU6000 IMU SPI for Revo clone setup
 
   #define SERIAL_SBUS Serial1
   #define SERIAL_DEBUG_BAUD 500000
@@ -237,24 +260,27 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
   //PWM servo or ESC outputs:
   const int servo1Pin = PB0;  // repurpose S1-IN
   const int servo2Pin = PB1;  // repurpose S2-IN
-  const int servo3Pin = PC0;  // repurpose S3-IN // GLS Was PA3
+  const int servo3Pin = PC2;  // repurpose S3-IN // GLS Was PA3
   const int servo4Pin = PC1;  // repurpose S4-IN // GLS Was PA2
   const int servo5Pin = PA1;  // repurpose S5-IN
   const int servo6Pin = PA0;  // repurpose S6-IN
   const int servo7Pin = PB13; // repurpose FlexiIO pin 4
   const int servo8Pin = PB12; // repurpose FlexiIO pin 3
 
-#elif defined (ARDUINO_NUCLEO_F103RB)
+#elif defined (ARDUINO_NUCLEO_F411RE)
+
+  #define LED_ON(__PIN__)   digitalWrite(__PIN__, HIGH);
+  #define LED_OFF(__PIN__)   digitalWrite(__PIN__, LOW);
 
   #define SERIAL_SBUS Serial1
-  #define SERIAL_DEBUG_BAUD 230400
+  #define SERIAL_DEBUG_BAUD 500000
 
-  #define SPIx SPI2
-  const PinName PIN_miso = PB_14;
-  const PinName PIN_mosi = PB_15;
-  const PinName PIN_sclk = PB_10;
-  const PinName PIN_ssel = NC;   // SSEL CS contolled by SW
-  const PinName slaveSelect = PB_1;
+  #define SPIx SPI1
+  const PinName PIN_miso = PA_6;    // YEL
+  const PinName PIN_mosi = PA_7;    // GRN
+  const PinName PIN_sclk = PA_5;    // ORG
+  const PinName PIN_ssel = NC;      // SSEL CS contolled by SW
+  const PinName slaveSelect = PA_4; // BLU
 
   const int warningLED = PB4;
   const int statusLED = PB5;
@@ -272,7 +298,7 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
   //PWM servo or ESC outputs:
   const int servo1Pin = PB0;  // repurpose S1-IN
   const int servo2Pin = PB1;  // repurpose S2-IN
-  const int servo3Pin = PC0;  // repurpose S3-IN // GLS Was PA3
+  const int servo3Pin = PC2;  // repurpose S3-IN // GLS Was PA3
   const int servo4Pin = PC1;  // repurpose S4-IN // GLS Was PA2
   const int servo5Pin = PA1;  // repurpose S5-IN
   const int servo6Pin = PA0;  // repurpose S6-IN
@@ -287,38 +313,15 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 
 
 #if defined(USE_MPU6000_SPI)
-
   #include "src/MPU6000/MPU6000.h"
   spi_stm32_t MPU6000_spi;
   const uint32_t SPI_LS_CLOCK =  1000000;
   const uint32_t SPI_HS_CLOCK =  6250000;
   MPU6000 mpu6000(MPU6000_spi);
-
 #else
-
   #error Invalid MPU defined... 
-
 #endif
 
-// Revo PINOUT
-
-// PA10 - RX
-
-// PB0  - S1-IN
-// PB1  - S2-IN
-// PA3  - S3-IN
-// PA2  - S4-IN
-// PA1  - S5-IN
-// PA0  - S6-IN
-
-// PB14 - S1-OUT
-// PB15 - S2-OUT
-// PC6  - S3-OUT
-// PC7  - S4-OUT
-// PC8  - S5-OUT
-// PC9  - S6-OUT
-
-//NOTE: Pins PA7/PA6/PA5/PA4 are reserved for the MPU6000 IMU SPI for Revo clone setup
 
 #include <Servo.h> //commanding any extra actuators, installed as part of Arduino_Core_STM32
 
@@ -338,6 +341,9 @@ const unsigned long RADIO_DATA_PRINT_COUNT = 20000;
 
 #include <Wire.h>     //I2c communication
 #include <SPI.h>      //SPI communication
+
+#define LED_ON(__PIN__)   digitalWrite(__PIN__, HIGH);
+#define LED_OFF(__PIN__)   digitalWrite(__PIN__, LOW);
 
 #define SERIAL_SBUS Serial5
 
@@ -483,7 +489,8 @@ void setup() {
   servo7.attach(servo7Pin, 900, 2100);
 
   //Set built in LED to turn on to signal startup & not to disturb vehicle during IMU calibration
-  digitalWrite(statusLED, HIGH);
+  // digitalWrite(statusLED, HIGH);
+  LED_ON(statusLED);
 
   delay(10);
 
@@ -655,8 +662,6 @@ void IMUinit() {
 
     mpu6000.setFullScaleGyroRange(GYRO_SCALE);
     mpu6000.setFullScaleAccelRange(ACCEL_SCALE);
-
-    uint8_t retCode = mpu6000.getDeviceID();
     mpu6000.setSpeedSPI(HIGH);
 
   #elif defined USE_MPU9250_SPI
@@ -1608,9 +1613,11 @@ void loopBlink() {
 void setupBlink(int numBlinks,int upTime, int downTime) {
   //DESCRIPTION: Simple function to make LED on board blink as desired
   for (int j = 1; j<= numBlinks; j++) {
-    digitalWrite(statusLED, LOW);
+    // digitalWrite(statusLED, LOW);
+    LED_OFF(statusLED);
     delay(downTime);
-    digitalWrite(statusLED, HIGH);
+    // digitalWrite(statusLED, HIGH);
+    LED_ON(statusLED);
     delay(upTime);
   }
 }
