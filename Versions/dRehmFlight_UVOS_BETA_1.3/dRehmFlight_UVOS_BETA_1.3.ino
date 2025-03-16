@@ -51,17 +51,20 @@ Everyone that sends me pictures and videos of your flying creations! -Nick
 #include "src/interface/interface.h" // maps micros(), millis() and delay() to UVOS System functions
 #include "src/PWM_servo/PWM_servo.h" // provides a PWMservo-like interface to UVOS Timers for PWM out
 
-/** This prevents us from having to type "uvos::" in front of a lot of things. */
+#include "imu.h" // IMU library (uvos wrapper for uvos icm42688p lib)
+#include "hw_init.h"
+
+/* This prevents us from having to type "uvos::" in front of a lot of things. */
 using namespace uvos;
 
-/** Global Hardware access from main.cpp */
+/* Global Hardware access from main.cpp */
 UVOSboard         hw;
 
-//Handle we'll use to interact with IMU SPI
-SpiHandle spi_handle;
+/* Handle we'll use to interact with IMU SPI */
+SpiHandle spi_imu;
 
-//ICM42688P imu
-ICM42688 imu;
+// Create the IMU object
+IMU imu{};
 
 //========================================================================================================================//
 
@@ -96,30 +99,30 @@ const int8_t  RC_MAP[SERRX_NUM_CHAN+1] = {-1,2,0,1,3,4,7,5,6,8,9};
 /* Setup gyro and accel full scale value selection and scale factor */
 
 #if defined (GYRO_250DPS)
-  #define GYRO_SCALE ICM42688::GyroFS::dps250
+  #define GYRO_SCALE IMU::GyroFS::dps250
   #define GYRO_SCALE_FACTOR 131.0
 #elif defined (GYRO_500DPS)
-  #define GYRO_SCALE ICM42688::GyroFS::dps500
+  #define GYRO_SCALE IMU::GyroFS::dps500
   #define GYRO_SCALE_FACTOR 65.5
 #elif defined (GYRO_1000DPS)
-  #define GYRO_SCALE ICM42688::GyroFS::dps1000
+  #define GYRO_SCALE IMU::GyroFS::dps1000
   #define GYRO_SCALE_FACTOR 32.8
 #elif defined (GYRO_2000DPS)
-  #define GYRO_SCALE ICM42688::GyroFS::dps2000
+  #define GYRO_SCALE IMU::GyroFS::dps2000
   #define GYRO_SCALE_FACTOR 16.4
 #endif
 
 #if defined (ACCEL_2G)
-  #define ACCEL_SCALE ICM42688::AccelFS::gpm2
+  #define ACCEL_SCALE IMU::AccelFS::gpm2
   #define ACCEL_SCALE_FACTOR 16384.0
 #elif defined (ACCEL_4G)
-  #define ACCEL_SCALE ICM42688::AccelFS::gpm4
+  #define ACCEL_SCALE IMU::AccelFS::gpm4
   #define ACCEL_SCALE_FACTOR 8192.0
 #elif defined (ACCEL_8G)
-  #define ACCEL_SCALE ICM42688::AccelFS::gpm8
+  #define ACCEL_SCALE IMU::AccelFS::gpm8
   #define ACCEL_SCALE_FACTOR 4096.0
 #elif defined (ACCEL_16G)
-  #define ACCEL_SCALE ICM42688::AccelFS::gpm16
+  #define ACCEL_SCALE IMU::AccelFS::gpm16
   #define ACCEL_SCALE_FACTOR 2048.0
 #endif
 
@@ -299,14 +302,12 @@ void setup() {
   channel_6_pwm = channel_6_fs;
 
   //Initialize IMU communication
+  //Gets IMU error, assumes vehicle is level when powered up
   if (IMUinit() != true) {
     Error_Handler();
   }
 
   delay(5);
-
-  //Get IMU error to zero accelerometer and gyro readings, assuming vehicle is level when powered up
-  //calculate_IMU_error(); //Calibration parameters printed to serial monitor. Paste these in the user specified variables section, then comment this out forever.
 
   //Arm servo channels
   servo1.write(90); //Command servo angle from 0-180 degrees (1000 to 2000 PWM)
@@ -469,61 +470,54 @@ void armedStatus() {
 bool IMUinit() {
   //DESCRIPTION: Initialize IMU
 
-#if 0 // gls
-  /*
-   * Don't worry about how this works.
-   */
-  #if defined USE_MPU6050_I2C
-    Wire.begin();
-    Wire.setClock(1000000); //Note this is 2.5 times the spec sheet 400 kHz max...
-    
-    mpu6050.initialize();
-    
-    if (mpu6050.testConnection() == false) {
-      Serial.println("MPU6050 initialization unsuccessful");
-      Serial.println("Check MPU6050 wiring or try cycling power");
-      while(1) {}
-    }
-
-    //From the reset state all registers should be 0x00, so we should be at
-    //max sample rate with digital low pass filter(s) off.  All we need to
-    //do is set the desired fullscale ranges
-    mpu6050.setFullScaleGyroRange(GYRO_SCALE);
-    mpu6050.setFullScaleAccelRange(ACCEL_SCALE);
-    
-  #elif defined USE_MPU9250_SPI
-    int status = mpu9250.begin();    
-
-    if (status < 0) {
-      Serial.println("MPU9250 initialization unsuccessful");
-      Serial.println("Check MPU9250 wiring or try cycling power");
-      Serial.print("Status: ");
-      Serial.println(status);
-      while(1) {}
-    }
-
-    //From the reset state all registers should be 0x00, so we should be at
-    //max sample rate with digital low pass filter(s) off.  All we need to
-    //do is set the desired fullscale ranges
-    mpu9250.setGyroRange(GYRO_SCALE);
-    mpu9250.setAccelRange(ACCEL_SCALE);
-    mpu9250.setMagCalX(MagErrorX, MagScaleX);
-    mpu9250.setMagCalY(MagErrorY, MagScaleY);
-    mpu9250.setMagCalZ(MagErrorZ, MagScaleZ);
-    mpu9250.setSrd(0); //sets gyro and accel read to 1khz, magnetometer read to 100hz
-  #endif
-
-#endif // gls
-
-  //Initialize the ICM-42688P IMU
-  if (imu.Init(spi_handle) != ICM42688::Result::OK)
+  if (imu.Init(spi_imu) != IMU::Result::OK)
   {
     return false;
   }
-  imu.setGyroFS(GYRO_SCALE);
-  imu.setAccelFS(ACCEL_SCALE);
+
+  //Compute IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
+  int rc = 0;
+  int st_result = 0;
+  std::array<int, 6> raw_bias = {0};
+
+  //Bias scaled by 2^16, accel is gee and gyro is dps.
+  //buffer raw_bias will be filled as:
+  //   Gyro X,Y,Z scaled by 2^16, in dps units
+  //   Accel X,Y,Z scaled by 2^16, in Gs units
+  rc = imu.RunSelfTest(&st_result, &raw_bias);
+  
+  //Save gyro/acc biases
+  GyroErrorX = (float)(raw_bias[0]) / (float)(1 << 16);
+  GyroErrorY = (float)(raw_bias[1]) / (float)(1 << 16);
+  GyroErrorZ = (float)(raw_bias[2]) / (float)(1 << 16);
+  AccErrorX  = (float)(raw_bias[3]) / (float)(1 << 16);
+  AccErrorY  = (float)(raw_bias[4]) / (float)(1 << 16);
+  AccErrorZ  = (float)(raw_bias[5]) / (float)(1 << 16);
+
+  if (imu.ConfigureInvDevice(ACCEL_SCALE, GYRO_SCALE, IMU::accel_odr8k, IMU::gyr_odr8k) != IMU::Result::OK) 
+  {
+    return false;
+  }
 
   return true;
+}
+
+__attribute__((always_inline)) void getMotion6(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz)
+{
+  std::array<int16_t, 6> buffer;
+  imu.ReadIMU6(buffer);
+
+  // Apply the mounting matrix transformations to the raw
+  // Accel[0,1,2] and Gyro[3,4,5] data
+  Devices::imu_apply_mounting_matrix(Devices::icm_mounting_matrix, &buffer[0]);
+  Devices::imu_apply_mounting_matrix(Devices::icm_mounting_matrix, &buffer[3]);
+
+  *ax = buffer[0];
+  *ay = buffer[1];
+  *az = buffer[2];
+  *gx = buffer[3];
+  *gy = buffer[4];
+  *gz = buffer[5];
 }
 
 void getIMUdata() {
@@ -538,7 +532,7 @@ void getIMUdata() {
    */
   int16_t AcX=0, AcY=0, AcZ=0, GyX=0, GyY=0, GyZ=0, MgX=0, MgY=0, MgZ=0;
 
-  imu.getIMU6(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ);
+  getMotion6(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ);
 
  //Accelerometer
   AccX = AcX / ACCEL_SCALE_FACTOR; //G's
@@ -662,6 +656,8 @@ void calculate_IMU_error() {
   Serial.println("Paste these values in user specified variables section and comment out calculate_IMU_error() in void setup.");
 }
 
+#endif // gls
+
 void calibrateAttitude() {
   //DESCRIPTION: Used to warm up the main loop to allow the madwick filter to converge before commands can be sent to the actuators
   //Assuming vehicle is powered up on level surface!
@@ -680,7 +676,6 @@ void calibrateAttitude() {
   }
 }
 
-#endif // gls
 
 void Madgwick(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float invSampleFreq) {
   //DESCRIPTION: Attitude estimation through sensor fusion - 9DOF

@@ -2,33 +2,53 @@
   * on the Matek H743 to avoid cluttering the main code.
   */
 
+/*
+ * ICM mounting matrix
+ * Coefficients are coded as Q30 integer
+ */
+static int32_t icm_mounting_matrix[9] = { (1 << 30), 0, 0, 
+                                          0, (1 << 30), 0,
+                                          0, 0, (1 << 30)
+                                        };
+
+// Uncomment to use software driven NSS
+#define USE_SOFT_NSS
+#define DESIRED_SPI_FREQ 1'000'000
+
 #if defined(ARDUINO_FC_MatekH743)
-  #define IMU_SPI SpiHandle::Config::Peripheral::SPI_1;
-  #define IMU_NSS_PIN  Pin(PORTC, 15)
-  #define IMU_SCLK_PIN Pin(PORTA, 5)
-  #define IMU_MISO_PIN Pin(PORTA, 6)
-  #define IMU_MOSI_PIN Pin(PORTD, 7)
-  #define SER_RX_UART UartHandler::Config::Peripheral::USART_1
-  #define SER_RX_RX_PIN Pin(PORTB, 7)
-  #define SER_RX_TX_PIN Pin(PORTB, 6)
-#elif defined(ARDUINO_DevEBoxH743VI)
-  #define IMU_SPI SpiHandle::Config::Peripheral::SPI_1;
-  #define IMU_NSS_PIN  Pin(PORTA, 4)
-  #define IMU_SCLK_PIN Pin(PORTA, 5)
-  #define IMU_MISO_PIN Pin(PORTA, 6)
-  #define IMU_MOSI_PIN Pin(PORTA, 7)
-  #define SER_RX_UART UartHandler::Config::Peripheral::USART_1
-  #define SER_RX_RX_PIN Pin(PORTB, 7)
-  #define SER_RX_TX_PIN Pin(PORTB, 6)
-#else
-  #error "Please define the board you are using"
+  constexpr SpiHandle::Config::Peripheral IMU_SPI = SpiHandle::Config::Peripheral::SPI_1;
+  constexpr Pin IMU_CS_PIN = Pin(PORTC, 15);
+  constexpr Pin IMU_SCLK_PIN = Pin(PORTA, 5);
+  constexpr Pin IMU_MISO_PIN = Pin(PORTA, 6);
+  constexpr Pin IMU_MOSI_PIN = Pin(PORTD, 7);
+  constexpr Pin IMU_INT1_PIN = Pin(PORTB, 2);
+  constexpr UartHandler::Config::Peripheral UART_NUM = UartHandler::Config::Peripheral::USART_1;
+  constexpr Pin TX_PIN = Pin(PORTA, 9);
+  constexpr Pin RX_PIN = Pin(PORTA, 10);
+#elif defined(ARDUINO_NUCLEO_H753ZI)
+  constexpr SpiHandle::Config::Peripheral IMU_SPI = SpiHandle::Config::Peripheral::SPI_1;
+  constexpr Pin IMU_CS_PIN = Pin(PORTC, 15);
+  constexpr Pin IMU_SCLK_PIN = Pin(PORTA, 5);
+  constexpr Pin IMU_MISO_PIN = Pin(PORTA, 6);
+  constexpr Pin IMU_MOSI_PIN = Pin(PORTD, 7);
+  constexpr Pin IMU_INT1_PIN = Pin(PORTB, 2);
+  constexpr UartHandler::Config::Peripheral UART_NUM = UartHandler::Config::Peripheral::USART_3;
+  constexpr Pin TX_PIN = Pin(PORTD, 8);
+  constexpr Pin RX_PIN = Pin(PORTD, 9);
+#else // defined(DevEBoxH743VI)
+  constexpr SpiHandle::Config::Peripheral IMU_SPI = SpiHandle::Config::Peripheral::SPI_1;
+  constexpr Pin IMU_CS_PIN = Pin(PORTA, 4);
+  constexpr Pin IMU_SCLK_PIN = Pin(PORTA, 5);
+  constexpr Pin IMU_MISO_PIN = Pin(PORTA, 6);
+  constexpr Pin IMU_MOSI_PIN = Pin(PORTA, 7);
+  constexpr Pin IMU_INT1_PIN = Pin(PORTA, 0);
+  constexpr UartHandler::Config::Peripheral UART_NUM = UartHandler::Config::Peripheral::USART_1;
+  constexpr Pin TX_PIN = Pin(PORTA, 9);
+  constexpr Pin RX_PIN = Pin(PORTA, 10);
 #endif /* ARDUINO_FC_MatekH743 */
 
-//Uncomment to use software driven NSS
-#define USE_SOFT_NSS
-
-//Requested IMU SPI bus frequency
-#define DESIRED_SPI_FREQ 1000000
+constexpr bool off = 0;
+constexpr bool on = 1;
 
 //Define servo and ESC outputs
 #define NUM_SERVO_OUTPUTS 6
@@ -139,16 +159,16 @@ void MakekH743_Init() {
   spi_conf.nss = SpiHandle::Config::NSS::HARD_OUTPUT;
 #endif /* USE_SOFT_NSS */
 
-  spi_conf.pin_config.nss  = IMU_NSS_PIN;
+  spi_conf.pin_config.nss  = IMU_CS_PIN;
   spi_conf.pin_config.sclk = IMU_SCLK_PIN;
   spi_conf.pin_config.miso = IMU_MISO_PIN;
   spi_conf.pin_config.mosi = IMU_MOSI_PIN;
 
   // spi_conf.baud_prescaler = SpiHandle::Config::BaudPrescaler::PS_32;
-  spi_handle.GetBaudHz(spi_conf.periph, DESIRED_SPI_FREQ, spi_conf.baud_prescaler);
+  spi_imu.GetBaudHz(spi_conf.periph, DESIRED_SPI_FREQ, spi_conf.baud_prescaler);
 
   //Initialize the IMU SPI instance
-  if (spi_handle.Init(spi_conf) != SpiHandle::Result::OK)
+  if (spi_imu.Init(spi_conf) != SpiHandle::Result::OK)
   {
     Error_Handler();
   }

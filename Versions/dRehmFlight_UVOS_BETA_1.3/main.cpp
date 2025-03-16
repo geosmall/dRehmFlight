@@ -27,8 +27,8 @@ int main(void)
 {
     /** Initialize the board hardware */
     hw.Init();
-    hw.usb_handle.Init(UsbHandle::FS_INTERNAL);
-    hw.usb_handle.SetReceiveCallback(UsbCallback, UsbHandle::FS_INTERNAL);
+    // hw.usb_handle.Init(UsbHandle::FS_INTERNAL);
+    // hw.usb_handle.SetReceiveCallback(UsbCallback, UsbHandle::FS_INTERNAL);
 
     setup();
 
