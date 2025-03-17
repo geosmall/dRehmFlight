@@ -36,9 +36,9 @@ const int32_t icm_mounting_matrix[9] = {
   constexpr Pin IMU_MISO_PIN = Pin(PORTA, 6);
   constexpr Pin IMU_MOSI_PIN = Pin(PORTD, 7);
   constexpr Pin IMU_INT1_PIN = Pin(PORTB, 2);
-  constexpr UartHandler::Config::Peripheral UART_NUM = UartHandler::Config::Peripheral::USART_1;
-  constexpr Pin TX_PIN = Pin(PORTA, 9);
-  constexpr Pin RX_PIN = Pin(PORTA, 10);
+  constexpr UartHandler::Config::Peripheral DBG_UART_NUM = UartHandler::Config::Peripheral::USART_1;
+  constexpr Pin DBG_TX_PIN = Pin(PORTA, 9);
+  constexpr Pin DBG_RX_PIN = Pin(PORTA, 10);
 #elif defined(ARDUINO_NUCLEO_H753ZI)
   constexpr SpiHandle::Config::Peripheral IMU_SPI_NUM = SpiHandle::Config::Peripheral::SPI_1;
   constexpr Pin IMU_CS_PIN = Pin(PORTC, 15);
@@ -46,9 +46,9 @@ const int32_t icm_mounting_matrix[9] = {
   constexpr Pin IMU_MISO_PIN = Pin(PORTA, 6);
   constexpr Pin IMU_MOSI_PIN = Pin(PORTD, 7);
   constexpr Pin IMU_INT1_PIN = Pin(PORTB, 2);
-  constexpr UartHandler::Config::Peripheral UART_NUM = UartHandler::Config::Peripheral::USART_3;
-  constexpr Pin TX_PIN = Pin(PORTD, 8);
-  constexpr Pin RX_PIN = Pin(PORTD, 9);
+  constexpr UartHandler::Config::Peripheral DBG_UART_NUM = UartHandler::Config::Peripheral::USART_3;
+  constexpr Pin DBG_TX_PIN = Pin(PORTD, 8);
+  constexpr Pin DBG_RX_PIN = Pin(PORTD, 9);
 #else // defined(DevEBoxH743VI)
   constexpr SpiHandle::Config::Peripheral IMU_SPI_NUM = SpiHandle::Config::Peripheral::SPI_1;
   constexpr Pin IMU_CS_PIN = Pin(PORTA, 4);
@@ -56,9 +56,9 @@ const int32_t icm_mounting_matrix[9] = {
   constexpr Pin IMU_MISO_PIN = Pin(PORTA, 6);
   constexpr Pin IMU_MOSI_PIN = Pin(PORTA, 7);
   constexpr Pin IMU_INT1_PIN = Pin(PORTA, 0);
-  constexpr UartHandler::Config::Peripheral UART_NUM = UartHandler::Config::Peripheral::USART_1;
-  constexpr Pin TX_PIN = Pin(PORTA, 9);
-  constexpr Pin RX_PIN = Pin(PORTA, 10);
+  constexpr UartHandler::Config::Peripheral DBG_UART_NUM = UartHandler::Config::Peripheral::USART_1;
+  constexpr Pin DBG_TX_PIN = Pin(PORTA, 9);
+  constexpr Pin DBG_RX_PIN = Pin(PORTA, 10);
 #endif /* ARDUINO_FC_MatekH743 */
 
 constexpr bool off = 0;
@@ -106,10 +106,10 @@ void debug_pin_init() {
 static const UartHandler::Config debug_uart_conf = [](){
   // Lambda to initialize 'uart_conf' in one expression.
   UartHandler::Config conf;
-  conf.periph = UART_NUM;
+  conf.periph = DBG_UART_NUM;
   conf.mode = UartHandler::Config::Mode::TX;
-  conf.pin_config.tx = TX_PIN;
-  conf.pin_config.rx = RX_PIN;
+  conf.pin_config.tx = DBG_TX_PIN;
+  conf.pin_config.rx = DBG_RX_PIN;
   // Return the fully initialized configuration.
   return conf;
 }(); // End of lambda, closing () immediately invokes it.
