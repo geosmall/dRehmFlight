@@ -57,14 +57,14 @@ Everyone that sends me pictures and videos of your flying creations! -Nick
 /* This prevents us from having to type "uvos::" in front of a lot of things. */
 using namespace uvos;
 
-/* Global Hardware access from main.cpp */
+/* Global Hardware access */
 UVOSboard         hw;
 
 /* Handle we'll use to interact with IMU SPI */
-SpiHandle spi_imu;
+// SpiHandle spi_imu;
 
 // Create the IMU object
-IMU imu{};
+// IMU imu{};
 
 //========================================================================================================================//
 
@@ -467,10 +467,13 @@ void armedStatus() {
   }
 }
 
+constexpr int SELF_TEST_RESULT_MASK = 0x3;
+constexpr int SELF_TEST_RESULT_PASS = 0b11;
+
 bool IMUinit() {
   //DESCRIPTION: Initialize IMU
 
-  if (imu.Init(spi_imu) != IMU::Result::OK)
+  if (Devices::imu_init() != true)
   {
     return false;
   }
@@ -484,7 +487,11 @@ bool IMUinit() {
   //buffer raw_bias will be filled as:
   //   Gyro X,Y,Z scaled by 2^16, in dps units
   //   Accel X,Y,Z scaled by 2^16, in Gs units
-  rc = imu.RunSelfTest(&st_result, &raw_bias);
+  rc = Devices::imu.RunSelfTest(&st_result, &raw_bias);
+  if ((rc != 0) || ((st_result & SELF_TEST_RESULT_MASK) != SELF_TEST_RESULT_PASS))
+  {
+    return false;
+  }
   
   //Save gyro/acc biases
   GyroErrorX = (float)(raw_bias[0]) / (float)(1 << 16);
@@ -494,7 +501,7 @@ bool IMUinit() {
   AccErrorY  = (float)(raw_bias[4]) / (float)(1 << 16);
   AccErrorZ  = (float)(raw_bias[5]) / (float)(1 << 16);
 
-  if (imu.ConfigureInvDevice(ACCEL_SCALE, GYRO_SCALE, IMU::accel_odr8k, IMU::gyr_odr8k) != IMU::Result::OK) 
+  if (Devices::imu.ConfigureInvDevice(ACCEL_SCALE, GYRO_SCALE, IMU::accel_odr8k, IMU::gyr_odr8k) != IMU::Result::OK) 
   {
     return false;
   }
@@ -505,7 +512,7 @@ bool IMUinit() {
 __attribute__((always_inline)) void getMotion6(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz)
 {
   std::array<int16_t, 6> buffer;
-  imu.ReadIMU6(buffer);
+  Devices::imu.ReadIMU6(buffer);
 
   // Apply the mounting matrix transformations to the raw
   // Accel[0,1,2] and Gyro[3,4,5] data

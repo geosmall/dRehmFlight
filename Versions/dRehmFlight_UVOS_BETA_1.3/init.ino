@@ -119,6 +119,8 @@ void SetDebugPin2(bool state)
 
 void MakekH743_Init() {
 
+#if 0 // gls
+
   debug1_pin.pin.port = DEBUG1_PORT;
   debug1_pin.pin.pin  = DEBUG1_PIN;
   debug1_pin.mode     = UVS_GPIO_MODE_OUTPUT_PP;
@@ -129,6 +131,8 @@ void MakekH743_Init() {
   debug2_pin.mode     = UVS_GPIO_MODE_OUTPUT_PP;
   uvs_gpio_init(&debug2_pin);
 
+#endif // gls
+
   //===================================================================================================================//
   //                                                 PWM OUTPUT SETUP                                                  //
   //===================================================================================================================//
@@ -138,6 +142,8 @@ void MakekH743_Init() {
 
   //Initialize servo PWMOutput object, check for errors
   // if (ESC_pwm.Init() != PWMOutput::Result::OK) Error_Handler();
+
+#if 0 // gls
 
   //===================================================================================================================//
   //                                                 SPI/IMU SETUP                                                     //
@@ -172,5 +178,7 @@ void MakekH743_Init() {
   {
     Error_Handler();
   }
+
+#endif // gls
 
 }
