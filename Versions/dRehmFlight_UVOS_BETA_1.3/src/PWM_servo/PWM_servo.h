@@ -7,9 +7,12 @@ namespace uvos {
 class PWM_servo {
 public:
 	PWM_servo(PWMOutput& pwm_output, size_t output_index)
-		: pwm_output_(pwm_output), output_index_(output_index),
-		  min_pulse_width_(900), max_pulse_width_(2100),
-		  min_angle_(40), max_angle_(140) {}
+		: pwm_output_(pwm_output),
+		  output_index_(output_index),
+		  min_pulse_width_(900),
+		  max_pulse_width_(2100),
+		  min_angle_(40),
+		  max_angle_(140) {}
 
 	/** @brief Sets the minimum and maximum pulse widths for the servo.
 	 *  @param min_pulse_width Minimum pulse width in microseconds (0 degrees).

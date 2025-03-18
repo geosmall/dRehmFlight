@@ -1,6 +1,6 @@
-#include "hw_init.h"
-
-// using namespace uvos;
+/** This file contains all necessary code for dRehmFlight initializations
+  * to avoid cluttering the main .ino file.
+  */
 
 namespace Devices {
 
@@ -65,9 +65,64 @@ constexpr bool off = 0;
 constexpr bool on = 1;
 
 //===================================================================================================================//
-//                                               Debug Pin SETUP                                                     //
+//                                              PWM Output SETUP                                                     //
 //===================================================================================================================//
 
+//Define servo and ESC outputs
+#define NUM_SERVO_OUTPUTS 6
+#define NUM_ESC_OUTPUTS 4
+
+//Define PWM output peripheral type alias for readability
+using TimPeriph = TimerHandle::Config::Peripheral;
+
+//Define servo outputs (S1-S6)
+static PWMOutputChannel servo_outputs[NUM_SERVO_OUTPUTS] = {
+  // S1 and S2 on TIM3
+  {TimPeriph::TIM_3, TimChannel::CH_3, Pin(PORTB, 0), 0, TimPolarity::HIGH, GPIO_AF2_TIM3},
+  {TimPeriph::TIM_3, TimChannel::CH_4, Pin(PORTB, 1), 0, TimPolarity::HIGH, GPIO_AF2_TIM3},
+  // S3-S6 on TIM5
+  {TimPeriph::TIM_5, TimChannel::CH_1, Pin(PORTA, 0), 0, TimPolarity::HIGH, GPIO_AF2_TIM5},
+  {TimPeriph::TIM_5, TimChannel::CH_2, Pin(PORTA, 1), 0, TimPolarity::HIGH, GPIO_AF2_TIM5},
+  {TimPeriph::TIM_5, TimChannel::CH_3, Pin(PORTA, 2), 0, TimPolarity::HIGH, GPIO_AF2_TIM5},
+  {TimPeriph::TIM_5, TimChannel::CH_4, Pin(PORTA, 3), 0, TimPolarity::HIGH, GPIO_AF2_TIM5},
+};
+
+//Define ESC outputs (S7-S10)
+static PWMOutputChannel esc_outputs[NUM_ESC_OUTPUTS] = {
+  // S7-S10 on TIM4
+  {TimPeriph::TIM_4, TimChannel::CH_1, Pin(PORTD, 12), 0, TimPolarity::HIGH, GPIO_AF2_TIM4},
+  {TimPeriph::TIM_4, TimChannel::CH_2, Pin(PORTD, 13), 0, TimPolarity::HIGH, GPIO_AF2_TIM4},
+  {TimPeriph::TIM_4, TimChannel::CH_3, Pin(PORTD, 14), 0, TimPolarity::HIGH, GPIO_AF2_TIM4},
+  {TimPeriph::TIM_4, TimChannel::CH_4, Pin(PORTD, 15), 0, TimPolarity::HIGH, GPIO_AF2_TIM4},
+  // {TimPeriph::TIM_15, TimChannel::CH_1, Pin(PORTE, 5), 0, TimPolarity::HIGH, GPIO_AF4_TIM15}, //Used for debug
+  // {TimPeriph::TIM_15, TimChannel::CH_2, Pin(PORTE, 6), 0, TimPolarity::HIGH, GPIO_AF4_TIM15}, //Used for debug
+};
+
+// Allocate storage for PWMOutput objects with proper alignment
+alignas(PWMOutput) static uint8_t servo_pwm_storage[sizeof(PWMOutput)];
+alignas(PWMOutput) static uint8_t esc_pwm_storage[sizeof(PWMOutput)];
+
+// Create references to the allocated storage
+PWMOutput& Servo_pwm = reinterpret_cast<PWMOutput&>(servo_pwm_storage);
+PWMOutput& ESC_pwm = reinterpret_cast<PWMOutput&>(esc_pwm_storage);
+
+// Initialization function, use placement-new to construct objects:
+bool pwm_output_init() {
+  new (&Servo_pwm) PWMOutput(servo_outputs, NUM_SERVO_OUTPUTS, 50);   // 50 Hz for servos
+  new (&ESC_pwm) PWMOutput(esc_outputs, NUM_ESC_OUTPUTS, 500);           // 500 Hz for ESCs
+
+    //Initialize servo PWMOutput object, check for errors
+  if (Servo_pwm.Init() != PWMOutput::Result::OK) return false;
+
+  //Initialize servo PWMOutput object, check for errors
+  if (ESC_pwm.Init() != PWMOutput::Result::OK) return false;
+
+  return true;
+}
+
+//===================================================================================================================//
+//                                               Debug Pin SETUP                                                     //
+//===================================================================================================================//
 
 #define DEBUG1_PORT UVS_GPIOE
 #define DEBUG1_PIN 5

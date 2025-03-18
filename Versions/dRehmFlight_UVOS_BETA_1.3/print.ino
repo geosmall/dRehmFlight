@@ -21,7 +21,7 @@ void printRadioData()
           ( int )channel_6_pwm \
         );
     // hw.usb_handle.TransmitInternal((uint8_t*)prn_buffer, prn_buflen);
-    hw.usb_handle.TransmitInternal((uint8_t*)prn_buffer, prn_buflen);
+    Devices::debug_uart.BlockingTransmit((uint8_t*)prn_buffer, prn_buflen);
   }
 }
 
@@ -38,7 +38,7 @@ void printDesiredState()
           pitch_des, \
           yaw_des \
         );
-    hw.usb_handle.TransmitInternal((uint8_t*)prn_buffer, prn_buflen);
+    Devices::debug_uart.BlockingTransmit((uint8_t*)prn_buffer, prn_buflen);
   }
 }
 
@@ -54,7 +54,7 @@ void printGyroData()
           GyroY, \
           GyroZ \
         );
-    hw.usb_handle.TransmitInternal((uint8_t*)prn_buffer, prn_buflen);
+    Devices::debug_uart.BlockingTransmit((uint8_t*)prn_buffer, prn_buflen);
   }
 }
 
@@ -70,7 +70,7 @@ void printAccelData()
           AccY, \
           AccZ \
         );
-    hw.usb_handle.TransmitInternal((uint8_t*)prn_buffer, prn_buflen);
+    Devices::debug_uart.BlockingTransmit((uint8_t*)prn_buffer, prn_buflen);
   }
 }
 
@@ -86,7 +86,7 @@ void printMagData()
           MagY, \
           MagZ \
         );
-    hw.usb_handle.TransmitInternal((uint8_t*)prn_buffer, prn_buflen);
+    Devices::debug_uart.BlockingTransmit((uint8_t*)prn_buffer, prn_buflen);
   }
 }
 
@@ -102,7 +102,7 @@ void printRollPitchYaw()
           pitch_IMU, \
           yaw_IMU \
         );
-    hw.usb_handle.TransmitInternal((uint8_t*)prn_buffer, prn_buflen);
+    Devices::debug_uart.BlockingTransmit((uint8_t*)prn_buffer, prn_buflen);
   }
 }
 
@@ -118,7 +118,7 @@ void printPIDoutput()
           pitch_PID, \
           yaw_PID \
         );
-    hw.usb_handle.TransmitInternal((uint8_t*)prn_buffer, prn_buflen);
+    Devices::debug_uart.BlockingTransmit((uint8_t*)prn_buffer, prn_buflen);
   }
 }
 
@@ -137,7 +137,7 @@ void printMotorCommands()
           ( double )m5_command_PWM, \
           ( double )m6_command_PWM \
         );
-    hw.usb_handle.TransmitInternal((uint8_t*)prn_buffer, prn_buflen);
+    Devices::debug_uart.BlockingTransmit((uint8_t*)prn_buffer, prn_buflen);
   }
 }
 
@@ -148,16 +148,15 @@ void printServoCommands()
     int prn_buflen \
       = snprintf \
         ( prn_buffer, sizeof( prn_buffer ), \
-          "s1_cmd: %5d s2_cmd: %5d s3_cmd: %5d s4_cmd: %5d s5_cmd: %5d s6_cmd: %5d s7_cmd: %5d\r\n", \
+          "s1_cmd: %5d s2_cmd: %5d s3_cmd: %5d s4_cmd: %5d s5_cmd: %5d s6_cmd: %5d\r\n", \
           ( int )s1_command_PWM, \
           ( int )s2_command_PWM, \
           ( int )s3_command_PWM, \
           ( int )s4_command_PWM, \
           ( int )s5_command_PWM, \
-          ( int )s6_command_PWM, \
-          ( int )s7_command_PWM \
+          ( int )s6_command_PWM  \
         );
-    hw.usb_handle.TransmitInternal((uint8_t*)prn_buffer, prn_buflen);
+    Devices::debug_uart.BlockingTransmit((uint8_t*)prn_buffer, prn_buflen);
   }
 }
 
@@ -168,6 +167,6 @@ void printLoopRate()
     // Serial.print(F("dt = "));
     // Serial.println(dt*1000000.0);
     int prn_buflen = snprintf ( prn_buffer, sizeof( prn_buffer ), "dt(sec.) = %10.5f\r\n", dt  );
-    hw.usb_handle.TransmitInternal((uint8_t*)prn_buffer, prn_buflen);
+    Devices::debug_uart.BlockingTransmit((uint8_t*)prn_buffer, prn_buflen);
   }
 }

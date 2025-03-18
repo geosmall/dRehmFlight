@@ -1,6 +1,7 @@
 #pragma once
 
 #include "uvos.h"
+#include "src/PWM_servo/PWM_servo.h" // provides a PWMservo-like interface to UVOS Timers for PWM out
 #include "imu.h"  // IMU library (uvos wrapper for uvos icm42688p lib)
 
 namespace Devices {
@@ -22,11 +23,18 @@ inline void imu_apply_mounting_matrix(const int32_t matrix[9], int16_t raw[3])
 // using IMU = uvos::IMU;
 
 // forward declarations
+extern PWMOutput& Servo_pwm;
+extern PWMOutput& ESC_pwm;
 extern uvos::UartHandler& debug_uart;
 extern uvos::SpiHandle& spi_imu;
 extern uvos::IMU& imu;
 extern const int32_t icm_mounting_matrix[9];
 
+void SetDebugPin1(bool state);
+void SetDebugPin2(bool state);
+
+bool pwm_output_init();
+void debug_uart_init();
 bool imu_init();
 
 } // namespace Devices

@@ -1,30 +1,9 @@
 //Arduino/Teensy Flight Controller - dRehmFlight
-//Author: Nicholas Rehm
+//Original Author: Nicholas Rehm
+//Modified: George Small
 //Project Start: 1/6/2020
-//Last Updated: 7/29/2022
-//Version: Beta 1.3
- 
-//========================================================================================================================//
-
-//CREDITS + SPECIAL THANKS
-/*
-Some elements inspired by:
-http://www.brokking.net/ymfc-32_main.html
-
-Madgwick filter function adapted from:
-https://github.com/arduino-libraries/MadgwickAHRS
-
-MPU9250 implementation based on MPU9250 library by:
-brian.taylor@bolderflight.com
-http://www.bolderflight.com
-
-Thank you to:
-RcGroups 'jihlein' - IMU implementation overhaul + SBUS implementation.
-Everyone that sends me pictures and videos of your flying creations! -Nick
-
-*/
-
-
+//Last Updated: 3/20/2025
+//Version: Based on Beta 1.3
 
 //========================================================================================================================//
 //                                                 USER-SPECIFIED DEFINES                                                 //                                                                 
@@ -48,23 +27,17 @@ Everyone that sends me pictures and videos of your flying creations! -Nick
 #include <uvos.h>
 #include "uvos_brd.h"
 
-#include "src/interface/interface.h" // maps micros(), millis() and delay() to UVOS System functions
-#include "src/PWM_servo/PWM_servo.h" // provides a PWMservo-like interface to UVOS Timers for PWM out
-
-#include "imu.h" // IMU library (uvos wrapper for uvos icm42688p lib)
+#include "src/time/time.h" // maps micros(), millis() and delay() to UVOS System functions
 #include "hw_init.h"
 
 /* This prevents us from having to type "uvos::" in front of a lot of things. */
 using namespace uvos;
 
+/* This prevents us from having to type "Devices::" in front of hw_init objects */
+using namespace Devices;
+
 /* Global Hardware access */
 UVOSboard         hw;
-
-/* Handle we'll use to interact with IMU SPI */
-// SpiHandle spi_imu;
-
-// Create the IMU object
-// IMU imu{};
 
 //========================================================================================================================//
 
@@ -112,6 +85,8 @@ const int8_t  RC_MAP[SERRX_NUM_CHAN+1] = {-1,2,0,1,3,4,7,5,6,8,9};
   #define GYRO_SCALE_FACTOR 16.4
 #endif
 
+#define GYRO_RATE IMU::gyr_odr8k
+
 #if defined (ACCEL_2G)
   #define ACCEL_SCALE IMU::AccelFS::gpm2
   #define ACCEL_SCALE_FACTOR 16384.0
@@ -125,6 +100,8 @@ const int8_t  RC_MAP[SERRX_NUM_CHAN+1] = {-1,2,0,1,3,4,7,5,6,8,9};
   #define ACCEL_SCALE IMU::AccelFS::gpm16
   #define ACCEL_SCALE_FACTOR 2048.0
 #endif
+
+#define ACCEL_RATE IMU::accel_odr8k
 
 #define MAG_SCALE_FACTOR 6.0 //uT
 
@@ -194,19 +171,19 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 //                                                     DECLARE OUTPUTS                                                       //                           
 //========================================================================================================================//                                          
 
-extern PWM_servo servo1; //init.ino creates Servo objects to control a servo or ESC with PWM
-extern PWM_servo servo2;
-extern PWM_servo servo3;
-extern PWM_servo servo4;
-extern PWM_servo servo5;
-extern PWM_servo servo6;
+//Instantiate PWM_servo objects
+PWM_servo servo1(Servo_pwm, 0); // Servo1 on output index 0
+PWM_servo servo2(Servo_pwm, 1); // Servo2 on output index 1
+PWM_servo servo3(Servo_pwm, 2); // Servo3 on output index 2
+PWM_servo servo4(Servo_pwm, 3); // Servo4 on output index 3
+PWM_servo servo5(Servo_pwm, 4); // Servo5 on output index 4
+PWM_servo servo6(Servo_pwm, 5); // Servo6 on output index 5
 
-extern PWM_esc esc1;
-extern PWM_esc esc2;
-extern PWM_esc esc3;
-extern PWM_esc esc4;
-// extern PWM_esc esc5;
-// extern PWM_esc esc6;
+// Instantiate PWM_esc objects
+PWM_esc esc1(ESC_pwm, 0);
+PWM_esc esc2(ESC_pwm, 1);
+PWM_esc esc3(ESC_pwm, 2);
+PWM_esc esc4(ESC_pwm, 3);
 
 //========================================================================================================================//
 
@@ -261,11 +238,14 @@ float error_yaw, error_yaw_prev, integral_yaw, integral_yaw_prev, derivative_yaw
 //Mixer
 float m1_command_scaled, m2_command_scaled, m3_command_scaled, m4_command_scaled, m5_command_scaled, m6_command_scaled;
 int m1_command_PWM, m2_command_PWM, m3_command_PWM, m4_command_PWM, m5_command_PWM, m6_command_PWM;
-float s1_command_scaled, s2_command_scaled, s3_command_scaled, s4_command_scaled, s5_command_scaled, s6_command_scaled, s7_command_scaled;
-int s1_command_PWM, s2_command_PWM, s3_command_PWM, s4_command_PWM, s5_command_PWM, s6_command_PWM, s7_command_PWM;
+float s1_command_scaled, s2_command_scaled, s3_command_scaled, s4_command_scaled, s5_command_scaled, s6_command_scaled; // , s7_command_scaled;
+int s1_command_PWM, s2_command_PWM, s3_command_PWM, s4_command_PWM, s5_command_PWM, s6_command_PWM; //, s7_command_PWM;
 
 //Flight status
 bool armedFly = false;
+
+//Print buffer for serial print
+char prn_buf[128];
 
 //End up here if any startup errors
 static void Error_Handler()
@@ -284,11 +264,15 @@ void setup() {
   //Set built in LED to turn on to signal startup
   hw.SetLed(true); //Built in LED
 
+  debug_uart_init();
+
+  sprintf(prn_buf, "Initializing...\r\n");
+  debug_uart.BlockingTransmit((uint8_t*)prn_buf, strlen(prn_buf));
+
   delay(5);
 
-  //Initialize board
-  MakekH743_Init();
-  delay(5);
+  //Initialize servo and esc PWM output, check for errors
+  if (pwm_output_init() != true) Error_Handler();
 
   //Initialize radio communication
   radioSetup();
@@ -308,6 +292,11 @@ void setup() {
   }
 
   delay(5);
+
+#if !defined (USE_SELFTEST)
+  //Get IMU error to zero accelerometer and gyro readings, assuming vehicle is level when powered up
+  calculate_IMU_error(); //Calibration parameters printed to serial monitor. Paste these in the user specified variables section, then comment this out forever.
+#endif /* defined (USE_SELFTEST) */
 
   //Arm servo channels
   servo1.write(90); //Command servo angle from 0-180 degrees (1000 to 2000 PWM)
@@ -335,9 +324,6 @@ void setup() {
   //Indicate entering main loop with 3 quick blinks
   setupBlink(3,160,70); //numBlinks, upTime (ms), downTime (ms)
 
-  //If using MPU9250 IMU, uncomment for one-time magnetometer calibration (may need to repeat for new locations)
-  //calibrateMagnetometer(); //Generates magentometer error and scale factors to be pasted in user-specified variables section
-
   SetDebugPin1(false);
 }
 
@@ -356,7 +342,7 @@ void loop() {
   current_time = micros();      
   dt = (current_time - prev_time)/1000000.0;
 
-  // loopBlink(); //Indicate we are in main loop with short blink every 1.5 seconds
+  loopBlink(); //Indicate we are in main loop with short blink every 1.5 seconds
 
   rxPoll(); // Poll the RC receiver for new message 
 
@@ -378,8 +364,6 @@ void loop() {
   //Get vehicle state
   getIMUdata(); //Pulls raw gyro, accelerometer, and magnetometer data from IMU and LP filters to remove noise
   Madgwick(GyroX, -GyroY, -GyroZ, -AccX, AccY, AccZ, MagY, -MagX, MagZ, dt); //Updates roll_IMU, pitch_IMU, and yaw_IMU angle estimates (degrees)
-
-#if 0 // gls
 
   //Compute desired state
   getDesState(); //Convert raw commands to normalized values based on saturated control limits
@@ -404,13 +388,11 @@ void loop() {
   servo4.write(s4_command_PWM);
   servo5.write(s5_command_PWM);
   servo6.write(s6_command_PWM);
-  servo7.write(s7_command_PWM);
+  // servo7.write(s7_command_PWM);
 
-#endif // gls
-    
   //Get vehicle commands for next loop iteration
   getCommands(); //Pulls current available radio commands
-  // failSafe(); //Prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
+  failSafe(); //Prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
 
   SetDebugPin1(false);
 
@@ -456,7 +438,7 @@ void controlMixer() {
   s4_command_scaled = 0;
   s5_command_scaled = 0;
   s6_command_scaled = 0;
-  s7_command_scaled = 0;
+  // s7_command_scaled = 0;
  
 }
 
@@ -473,10 +455,12 @@ constexpr int SELF_TEST_RESULT_PASS = 0b11;
 bool IMUinit() {
   //DESCRIPTION: Initialize IMU
 
-  if (Devices::imu_init() != true)
+  if (imu_init() != true)
   {
     return false;
   }
+
+#if defined (USE_SELFTEST)
 
   //Compute IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
   int rc = 0;
@@ -487,7 +471,7 @@ bool IMUinit() {
   //buffer raw_bias will be filled as:
   //   Gyro X,Y,Z scaled by 2^16, in dps units
   //   Accel X,Y,Z scaled by 2^16, in Gs units
-  rc = Devices::imu.RunSelfTest(&st_result, &raw_bias);
+  rc = imu.RunSelfTest(&st_result, &raw_bias);
   if ((rc != 0) || ((st_result & SELF_TEST_RESULT_MASK) != SELF_TEST_RESULT_PASS))
   {
     return false;
@@ -501,7 +485,9 @@ bool IMUinit() {
   AccErrorY  = (float)(raw_bias[4]) / (float)(1 << 16);
   AccErrorZ  = (float)(raw_bias[5]) / (float)(1 << 16);
 
-  if (Devices::imu.ConfigureInvDevice(ACCEL_SCALE, GYRO_SCALE, IMU::accel_odr8k, IMU::gyr_odr8k) != IMU::Result::OK) 
+#endif /* defined (USE_SELFTEST) */
+
+  if (imu.ConfigureInvDevice(ACCEL_SCALE, GYRO_SCALE, ACCEL_RATE, GYRO_RATE) != IMU::Result::OK) 
   {
     return false;
   }
@@ -512,12 +498,12 @@ bool IMUinit() {
 __attribute__((always_inline)) void getMotion6(int16_t* ax, int16_t* ay, int16_t* az, int16_t* gx, int16_t* gy, int16_t* gz)
 {
   std::array<int16_t, 6> buffer;
-  Devices::imu.ReadIMU6(buffer);
+  imu.ReadIMU6(buffer);
 
   // Apply the mounting matrix transformations to the raw
   // Accel[0,1,2] and Gyro[3,4,5] data
-  Devices::imu_apply_mounting_matrix(Devices::icm_mounting_matrix, &buffer[0]);
-  Devices::imu_apply_mounting_matrix(Devices::icm_mounting_matrix, &buffer[3]);
+  imu_apply_mounting_matrix(icm_mounting_matrix, &buffer[0]);
+  imu_apply_mounting_matrix(icm_mounting_matrix, &buffer[3]);
 
   *ax = buffer[0];
   *ay = buffer[1];
@@ -590,8 +576,6 @@ void getIMUdata() {
   MagZ_prev = MagZ;
 }
 
-#if 0 // gls
-
 void calculate_IMU_error() {
   //DESCRIPTION: Computes IMU accelerometer and gyro error on startup. Note: vehicle should be powered up on flat surface
   /*
@@ -607,14 +591,10 @@ void calculate_IMU_error() {
   GyroErrorY= 0.0;
   GyroErrorZ = 0.0;
   
-  //Read IMU values 12000 times
+  //Read IMU values IMU_CAL_ITERATION_LOOPS times
   int c = 0;
-  while (c < 12000) {
-    #if defined USE_MPU6050_I2C
-      mpu6050.getMotion6(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ);
-    #elif defined USE_MPU9250_SPI
-      mpu9250.getMotion9(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ, &MgX, &MgY, &MgZ);
-    #endif
+  while (c < IMU_CAL_ITERATION_LOOPS) {
+    getMotion6(&AcX, &AcY, &AcZ, &GyX, &GyY, &GyZ);
     
     AccX  = AcX / ACCEL_SCALE_FACTOR;
     AccY  = AcY / ACCEL_SCALE_FACTOR;
@@ -640,30 +620,28 @@ void calculate_IMU_error() {
   GyroErrorY = GyroErrorY / c;
   GyroErrorZ = GyroErrorZ / c;
 
-  Serial.print("float AccErrorX = ");
-  Serial.print(AccErrorX);
-  Serial.println(";");
-  Serial.print("float AccErrorY = ");
-  Serial.print(AccErrorY);
-  Serial.println(";");
-  Serial.print("float AccErrorZ = ");
-  Serial.print(AccErrorZ);
-  Serial.println(";");
+  // Serial.print("float AccErrorX = ");
+  // Serial.print(AccErrorX);
+  // Serial.println(";");
+  // Serial.print("float AccErrorY = ");
+  // Serial.print(AccErrorY);
+  // Serial.println(";");
+  // Serial.print("float AccErrorZ = ");
+  // Serial.print(AccErrorZ);
+  // Serial.println(";");
   
-  Serial.print("float GyroErrorX = ");
-  Serial.print(GyroErrorX);
-  Serial.println(";");
-  Serial.print("float GyroErrorY = ");
-  Serial.print(GyroErrorY);
-  Serial.println(";");
-  Serial.print("float GyroErrorZ = ");
-  Serial.print(GyroErrorZ);
-  Serial.println(";");
+  // Serial.print("float GyroErrorX = ");
+  // Serial.print(GyroErrorX);
+  // Serial.println(";");
+  // Serial.print("float GyroErrorY = ");
+  // Serial.print(GyroErrorY);
+  // Serial.println(";");
+  // Serial.print("float GyroErrorZ = ");
+  // Serial.print(GyroErrorZ);
+  // Serial.println(";");
 
-  Serial.println("Paste these values in user specified variables section and comment out calculate_IMU_error() in void setup.");
+  // Serial.println("Paste these values in user specified variables section and comment out calculate_IMU_error() in void setup.");
 }
-
-#endif // gls
 
 void calibrateAttitude() {
   //DESCRIPTION: Used to warm up the main loop to allow the madwick filter to converge before commands can be sent to the actuators
@@ -682,7 +660,6 @@ void calibrateAttitude() {
     loopRate(2000); //do not exceed 2000Hz
   }
 }
-
 
 void Madgwick(float gx, float gy, float gz, float ax, float ay, float az, float mx, float my, float mz, float invSampleFreq) {
   //DESCRIPTION: Attitude estimation through sensor fusion - 9DOF
@@ -885,8 +862,6 @@ void Madgwick6DOF(float gx, float gy, float gz, float ax, float ay, float az, fl
   pitch_IMU = -asin(constrain(-2.0f * (q1*q3 - q0*q2),-0.999999,0.999999))*57.29577951; //degrees
   yaw_IMU = -atan2(q1*q2 + q0*q3, 0.5f - q2*q2 - q3*q3)*57.29577951; //degrees
 }
-
-#if 0 // gls
 
 void getDesState() {
   //DESCRIPTION: Normalizes desired control values to appropriate values
@@ -1131,7 +1106,7 @@ void scaleCommands() {
   s4_command_PWM = s4_command_scaled*180;
   s5_command_PWM = s5_command_scaled*180;
   s6_command_PWM = s6_command_scaled*180;
-  s7_command_PWM = s7_command_scaled*180;
+  // s7_command_PWM = s7_command_scaled*180;
   //Constrain commands to servos within servo library bounds
   s1_command_PWM = constrain(s1_command_PWM, 0, 180);
   s2_command_PWM = constrain(s2_command_PWM, 0, 180);
@@ -1139,11 +1114,9 @@ void scaleCommands() {
   s4_command_PWM = constrain(s4_command_PWM, 0, 180);
   s5_command_PWM = constrain(s5_command_PWM, 0, 180);
   s6_command_PWM = constrain(s6_command_PWM, 0, 180);
-  s7_command_PWM = constrain(s7_command_PWM, 0, 180);
+  // s7_command_PWM = constrain(s7_command_PWM, 0, 180);
 
 }
-
-#endif // gls
 
 void getCommands() {
   //DESCRIPTION: Get raw PWM values for every channel from the radio
@@ -1153,49 +1126,6 @@ void getCommands() {
    * is running a bunch of interrupts to continuously update the radio readings. If using an SBUS receiver, the alues are pulled from the SBUS library directly.
    * The raw radio commands are filtered with a first order low-pass filter to eliminate any really high frequency noise. 
    */
-
-#if 0 // gls
-
-  #if defined USE_PPM_RX || defined USE_PWM_RX
-    channel_1_pwm = getRadioPWM(1);
-    channel_2_pwm = getRadioPWM(2);
-    channel_3_pwm = getRadioPWM(3);
-    channel_4_pwm = getRadioPWM(4);
-    channel_5_pwm = getRadioPWM(5);
-    channel_6_pwm = getRadioPWM(6);
-    
-  #elif defined USE_SBUS_RX
-    if (sbus.read(&sbusChannels[0], &sbusFailSafe, &sbusLostFrame))
-    {
-      //sBus scaling below is for Taranis-Plus and X4R-SB
-      float scale = 0.615;  
-      float bias  = 895.0; 
-      channel_1_pwm = sbusChannels[0] * scale + bias;
-      channel_2_pwm = sbusChannels[1] * scale + bias;
-      channel_3_pwm = sbusChannels[2] * scale + bias;
-      channel_4_pwm = sbusChannels[3] * scale + bias;
-      channel_5_pwm = sbusChannels[4] * scale + bias;
-      channel_6_pwm = sbusChannels[5] * scale + bias; 
-    }
-
-  #elif defined USE_DSM_RX
-    if (DSM.timedOut(micros())) {
-        //Serial.println("*** DSM RX TIMED OUT ***");
-    }
-    else if (DSM.gotNewFrame()) {
-        uint16_t values[num_DSM_channels];
-        DSM.getChannelValues(values, num_DSM_channels);
-
-        channel_1_pwm = values[0];
-        channel_2_pwm = values[1];
-        channel_3_pwm = values[2];
-        channel_4_pwm = values[3];
-        channel_5_pwm = values[4];
-        channel_6_pwm = values[5];
-    }
-  #endif
-  
-#endif // gls
 
   //Map the rc commands into channel_N_pwm using RC_MAP[] conversion
   channel_1_pwm = getRadioPWM(RC_MAP[1]);
@@ -1254,66 +1184,12 @@ void failSafe() {
   }
 }
 
-#if 0 // gls
-
 void commandMotors() {
   //DESCRIPTION: Send pulses to motor pins, oneshot125 protocol
-  /*
-   * My crude implimentation of OneShot125 protocol which sends 125 - 250us pulses to the ESCs (mXPin). The pulselengths being
-   * sent are mX_command_PWM, computed in scaleCommands(). This may be replaced by something more efficient in the future.
-   */
-  int wentLow = 0;
-  int pulseStart, timer;
-  int flagM1 = 0;
-  int flagM2 = 0;
-  int flagM3 = 0;
-  int flagM4 = 0;
-  int flagM5 = 0;
-  int flagM6 = 0;
-  
-  //Write all motor pins high
-  digitalWrite(m1Pin, HIGH);
-  digitalWrite(m2Pin, HIGH);
-  digitalWrite(m3Pin, HIGH);
-  digitalWrite(m4Pin, HIGH);
-  digitalWrite(m5Pin, HIGH);
-  digitalWrite(m6Pin, HIGH);
-  pulseStart = micros();
-
-  //Write each motor pin low as correct pulse length is reached
-  while (wentLow < 6 ) { //Keep going until final (6th) pulse is finished, then done
-    timer = micros();
-    if ((m1_command_PWM <= timer - pulseStart) && (flagM1==0)) {
-      digitalWrite(m1Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM1 = 1;
-    }
-    if ((m2_command_PWM <= timer - pulseStart) && (flagM2==0)) {
-      digitalWrite(m2Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM2 = 1;
-    }
-    if ((m3_command_PWM <= timer - pulseStart) && (flagM3==0)) {
-      digitalWrite(m3Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM3 = 1;
-    }
-    if ((m4_command_PWM <= timer - pulseStart) && (flagM4==0)) {
-      digitalWrite(m4Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM4 = 1;
-    } 
-    if ((m5_command_PWM <= timer - pulseStart) && (flagM5==0)) {
-      digitalWrite(m5Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM5 = 1;
-    } 
-    if ((m6_command_PWM <= timer - pulseStart) && (flagM6==0)) {
-      digitalWrite(m6Pin, LOW);
-      wentLow = wentLow + 1;
-      flagM6 = 1;
-    } 
-  }
+  esc1.write(m1_command_PWM); //Writes PWM value to esc object
+  esc2.write(m2_command_PWM);
+  esc3.write(m3_command_PWM);
+  esc4.write(m4_command_PWM);
 }
 
 void armMotors() {
@@ -1341,7 +1217,7 @@ void calibrateESCs() {
       current_time = micros();      
       dt = (current_time - prev_time)/1000000.0;
     
-      digitalWrite(13, HIGH); //LED on to indicate we are not in main loop
+      hw.SetLed(true); //LED on to indicate we are not in main loop
 
       getCommands(); //Pulls current available radio commands
       failSafe(); //Prevent failures in event of bad receiver connection, defaults to failsafe values assigned in setup
@@ -1362,7 +1238,7 @@ void calibrateESCs() {
       s4_command_scaled = thro_des;
       s5_command_scaled = thro_des;
       s6_command_scaled = thro_des;
-      s7_command_scaled = thro_des;
+      // s7_command_scaled = thro_des;
       scaleCommands(); //Scales motor commands to 125 to 250 range (oneshot125 protocol) and servo PWM commands to 0 to 180 (for servo library)
     
       //throttleCut(); //Directly sets motor commands to low based on state of ch5
@@ -1373,7 +1249,7 @@ void calibrateESCs() {
       servo4.write(s4_command_PWM);
       servo5.write(s5_command_PWM);
       servo6.write(s6_command_PWM);
-      servo7.write(s7_command_PWM);
+      // servo7.write(s7_command_PWM);
       commandMotors(); //Sends command pulses to each motor pin using OneShot125 protocol
       
       //printRadioData(); //Radio pwm values (expected: 1000 to 2000)
@@ -1478,54 +1354,6 @@ void throttleCut() {
   }
 }
 
-void calibrateMagnetometer() {
-  #if defined USE_MPU9250_SPI 
-    float success;
-    Serial.println("Beginning magnetometer calibration in");
-    Serial.println("3...");
-    delay(1000);
-    Serial.println("2...");
-    delay(1000);
-    Serial.println("1...");
-    delay(1000);
-    Serial.println("Rotate the IMU about all axes until complete.");
-    Serial.println(" ");
-    success = mpu9250.calibrateMag();
-    if(success) {
-      Serial.println("Calibration Successful!");
-      Serial.println("Please comment out the calibrateMagnetometer() function and copy these values into the code:");
-      Serial.print("float MagErrorX = ");
-      Serial.print(mpu9250.getMagBiasX_uT());
-      Serial.println(";");
-      Serial.print("float MagErrorY = ");
-      Serial.print(mpu9250.getMagBiasY_uT());
-      Serial.println(";");
-      Serial.print("float MagErrorZ = ");
-      Serial.print(mpu9250.getMagBiasZ_uT());
-      Serial.println(";");
-      Serial.print("float MagScaleX = ");
-      Serial.print(mpu9250.getMagScaleFactorX());
-      Serial.println(";");
-      Serial.print("float MagScaleY = ");
-      Serial.print(mpu9250.getMagScaleFactorY());
-      Serial.println(";");
-      Serial.print("float MagScaleZ = ");
-      Serial.print(mpu9250.getMagScaleFactorZ());
-      Serial.println(";");
-      Serial.println(" ");
-      Serial.println("If you are having trouble with your attitude estimate at a new flying location, repeat this process as needed.");
-    }
-    else {
-      Serial.println("Calibration Unsuccessful. Please reset the board and try again.");
-    }
-  
-    while(1); //Halt code so it won't enter main loop until this function commented out
-  #endif
-  Serial.println("Error: MPU9250 not selected. Cannot calibrate non-existent magnetometer.");
-  while(1); //Halt code so it won't enter main loop until this function commented out
-}
-
-#endif // gls
 void loopRate(int freq) {
   //DESCRIPTION: Regulate main loop rate to specified frequency in Hz
   /*
@@ -1551,7 +1379,6 @@ void loopBlink() {
    */
   if (current_time - blink_counter > blink_delay) {
     blink_counter = micros();
-    // digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
     hw.SetLed(blinkAlternate); //Built in LED
     
     if (blinkAlternate == 1) {
@@ -1574,147 +1401,6 @@ void setupBlink(int numBlinks,int upTime, int downTime) {
     delay(upTime);
   }
 }
-
-#if 0 // gls
-
-void printRadioData() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F(" CH1:"));
-    Serial.print(channel_1_pwm);
-    Serial.print(F(" CH2:"));
-    Serial.print(channel_2_pwm);
-    Serial.print(F(" CH3:"));
-    Serial.print(channel_3_pwm);
-    Serial.print(F(" CH4:"));
-    Serial.print(channel_4_pwm);
-    Serial.print(F(" CH5:"));
-    Serial.print(channel_5_pwm);
-    Serial.print(F(" CH6:"));
-    Serial.println(channel_6_pwm);
-  }
-}
-
-void printDesiredState() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("thro_des:"));
-    Serial.print(thro_des);
-    Serial.print(F(" roll_des:"));
-    Serial.print(roll_des);
-    Serial.print(F(" pitch_des:"));
-    Serial.print(pitch_des);
-    Serial.print(F(" yaw_des:"));
-    Serial.println(yaw_des);
-  }
-}
-
-void printGyroData() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("GyroX:"));
-    Serial.print(GyroX);
-    Serial.print(F(" GyroY:"));
-    Serial.print(GyroY);
-    Serial.print(F(" GyroZ:"));
-    Serial.println(GyroZ);
-  }
-}
-
-void printAccelData() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("AccX:"));
-    Serial.print(AccX);
-    Serial.print(F(" AccY:"));
-    Serial.print(AccY);
-    Serial.print(F(" AccZ:"));
-    Serial.println(AccZ);
-  }
-}
-
-void printMagData() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("MagX:"));
-    Serial.print(MagX);
-    Serial.print(F(" MagY:"));
-    Serial.print(MagY);
-    Serial.print(F(" MagZ:"));
-    Serial.println(MagZ);
-  }
-}
-
-void printRollPitchYaw() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("roll:"));
-    Serial.print(roll_IMU);
-    Serial.print(F(" pitch:"));
-    Serial.print(pitch_IMU);
-    Serial.print(F(" yaw:"));
-    Serial.println(yaw_IMU);
-  }
-}
-
-void printPIDoutput() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("roll_PID:"));
-    Serial.print(roll_PID);
-    Serial.print(F(" pitch_PID:"));
-    Serial.print(pitch_PID);
-    Serial.print(F(" yaw_PID:"));
-    Serial.println(yaw_PID);
-  }
-}
-
-void printMotorCommands() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("m1_command:"));
-    Serial.print(m1_command_PWM);
-    Serial.print(F(" m2_command:"));
-    Serial.print(m2_command_PWM);
-    Serial.print(F(" m3_command:"));
-    Serial.print(m3_command_PWM);
-    Serial.print(F(" m4_command:"));
-    Serial.print(m4_command_PWM);
-    Serial.print(F(" m5_command:"));
-    Serial.print(m5_command_PWM);
-    Serial.print(F(" m6_command:"));
-    Serial.println(m6_command_PWM);
-  }
-}
-
-void printServoCommands() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("s1_command:"));
-    Serial.print(s1_command_PWM);
-    Serial.print(F(" s2_command:"));
-    Serial.print(s2_command_PWM);
-    Serial.print(F(" s3_command:"));
-    Serial.print(s3_command_PWM);
-    Serial.print(F(" s4_command:"));
-    Serial.print(s4_command_PWM);
-    Serial.print(F(" s5_command:"));
-    Serial.print(s5_command_PWM);
-    Serial.print(F(" s6_command:"));
-    Serial.print(s6_command_PWM);
-    Serial.print(F(" s7_command:"));
-    Serial.println(s7_command_PWM);
-  }
-}
-
-void printLoopRate() {
-  if (current_time - print_counter > 10000) {
-    print_counter = micros();
-    Serial.print(F("dt:"));
-    Serial.println(dt*1000000.0);
-  }
-}
-#endif // gls
 
 //=========================================================================================//
 
