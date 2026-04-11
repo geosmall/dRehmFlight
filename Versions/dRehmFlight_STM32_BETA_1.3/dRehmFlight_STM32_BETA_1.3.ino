@@ -185,15 +185,15 @@ float Kd_yaw = 0.00015;       //Yaw D-gain (be careful when increasing too high,
 
 //STM32: Motor configuration via MotorManager (BoardConfig motor array)
 //PWM servo outputs (TODO: Define using available timer channels):
-const int servo1Pin = PB10;  // TIM2_CH3 (example)
-const int servo2Pin = NC;    // Not yet assigned
-const int servo3Pin = NC;    // Not yet assigned
-const int servo4Pin = NC;    // Not yet assigned
-const int servo5Pin = NC;    // Not yet assigned
-const int servo6Pin = NC;    // Not yet assigned
-const int servo7Pin = NC;    // Not yet assigned
+const Pin servo1Pin = PB10;     // TIM2_CH3 (example)
+const Pin servo2Pin = NC_PIN;   // Not yet assigned
+const Pin servo3Pin = NC_PIN;   // Not yet assigned
+const Pin servo4Pin = NC_PIN;   // Not yet assigned
+const Pin servo5Pin = NC_PIN;   // Not yet assigned
+const Pin servo6Pin = NC_PIN;   // Not yet assigned
+const Pin servo7Pin = NC_PIN;   // Not yet assigned
 //LED:
-const int ledPin = BoardConfig::status_leds.led1_pin;  // PC13
+const Pin ledPin = BoardConfig::status_leds.led1_pin;  // PC13
 
 
 
@@ -1434,7 +1434,7 @@ void loopBlink() {
    */
   if (current_time - blink_counter > blink_delay) {
     blink_counter = micros();
-    digitalWrite(13, blinkAlternate); //Pin 13 is built in LED
+    digitalWrite(ledPin, blinkAlternate); //LED (via BoardConfig::status_leds.led1_pin)
     
     if (blinkAlternate == 1) {
       blinkAlternate = 0;
@@ -1450,9 +1450,9 @@ void loopBlink() {
 void setupBlink(int numBlinks,int upTime, int downTime) {
   //DESCRIPTION: Simple function to make LED on board blink as desired
   for (int j = 1; j<= numBlinks; j++) {
-    digitalWrite(13, LOW);
+    digitalWrite(ledPin, LOW);
     delay(downTime);
-    digitalWrite(13, HIGH);
+    digitalWrite(ledPin, HIGH);
     delay(upTime);
   }
 }

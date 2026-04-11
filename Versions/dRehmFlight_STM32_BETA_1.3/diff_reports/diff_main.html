@@ -716,31 +716,31 @@ code { font-family: inherit; }
 <td class="ln">187</td><td class="code" style="background-color:#efcb05;"><code><span style="color:#008000;">//PWM servo outputs (TODO: Define using available timer channels):</span></code></td>
 </tr><tr>
 <td class="ln"><a id="d16" href="#d16">212</a></td><td class="code" style="background-color:#efcb05;"><code><span style="color:#008000;">//Note: If using SBUS, connect to pin 21 (RX5), if using DSM, connect to pin 15 (RX3)</span></code></td>
-<td class="ln">188</td><td class="code" style="background-color:#efcb05;"><code>const int servo1Pin = PB10;  <span style="color:#008000;">// TIM2_CH3 (example)</span></code></td>
+<td class="ln">188</td><td class="code" style="background-color:#efcb05;"><code>const Pin servo1Pin = PB10;     <span style="color:#008000;">// TIM2_CH3 (example)</span></code></td>
 </tr><tr>
 <td class="ln"><a id="d16" href="#d16">213</a></td><td class="code" style="background-color:#efcb05;"><code>const int ch1Pin = 15; <span style="color:#008000;">//throttle</span></code></td>
-<td class="ln">189</td><td class="code" style="background-color:#efcb05;"><code>const int servo2Pin = NC;    <span style="color:#008000;">// Not yet assigned</span></code></td>
+<td class="ln">189</td><td class="code" style="background-color:#efcb05;"><code>const Pin servo2Pin = NC_PIN;   <span style="color:#008000;">// Not yet assigned</span></code></td>
 </tr><tr>
 <td class="ln"><a id="d16" href="#d16">214</a></td><td class="code" style="background-color:#efcb05;"><code>const int ch2Pin = 16; <span style="color:#008000;">//ail</span></code></td>
-<td class="ln">190</td><td class="code" style="background-color:#efcb05;"><code>const int servo3Pin = NC;    <span style="color:#008000;">// Not yet assigned</span></code></td>
+<td class="ln">190</td><td class="code" style="background-color:#efcb05;"><code>const Pin servo3Pin = NC_PIN;   <span style="color:#008000;">// Not yet assigned</span></code></td>
 </tr><tr>
 <td class="ln"><a id="d16" href="#d16">215</a></td><td class="code" style="background-color:#efcb05;"><code>const int ch3Pin = 17; <span style="color:#008000;">//ele</span></code></td>
-<td class="ln">191</td><td class="code" style="background-color:#efcb05;"><code>const int servo4Pin = NC;    <span style="color:#008000;">// Not yet assigned</span></code></td>
+<td class="ln">191</td><td class="code" style="background-color:#efcb05;"><code>const Pin servo4Pin = NC_PIN;   <span style="color:#008000;">// Not yet assigned</span></code></td>
 </tr><tr>
 <td class="ln"><a id="d16" href="#d16">216</a></td><td class="code" style="background-color:#efcb05;"><code>const int ch4Pin = 20; <span style="color:#008000;">//rudd</span></code></td>
-<td class="ln">192</td><td class="code" style="background-color:#efcb05;"><code>const int servo5Pin = NC;    <span style="color:#008000;">// Not yet assigned</span></code></td>
+<td class="ln">192</td><td class="code" style="background-color:#efcb05;"><code>const Pin servo5Pin = NC_PIN;   <span style="color:#008000;">// Not yet assigned</span></code></td>
 </tr><tr>
 <td class="ln"><a id="d16" href="#d16">217</a></td><td class="code" style="background-color:#efcb05;"><code>const int ch5Pin = 21; <span style="color:#008000;">//gear (throttle cut)</span></code></td>
-<td class="ln">193</td><td class="code" style="background-color:#efcb05;"><code>const int servo6Pin = NC;    <span style="color:#008000;">// Not yet assigned</span></code></td>
+<td class="ln">193</td><td class="code" style="background-color:#efcb05;"><code>const Pin servo6Pin = NC_PIN;   <span style="color:#008000;">// Not yet assigned</span></code></td>
 </tr><tr>
 <td class="ln"><a id="d16" href="#d16">218</a></td><td class="code" style="background-color:#efcb05;"><code>const int ch6Pin = 22; <span style="color:#008000;">//aux1 (free aux channel)</span></code></td>
-<td class="ln">194</td><td class="code" style="background-color:#efcb05;"><code>const int servo7Pin = NC;    <span style="color:#008000;">// Not yet assigned</span></code></td>
+<td class="ln">194</td><td class="code" style="background-color:#efcb05;"><code>const Pin servo7Pin = NC_PIN;   <span style="color:#008000;">// Not yet assigned</span></code></td>
 </tr><tr>
 <td class="ln"><a id="d16" href="#d16">219</a></td><td class="code" style="background-color:#efcb05;"><code>const int PPM_Pin = 23;</code></td>
 <td class="ln">195</td><td class="code" style="background-color:#efcb05;"><code><span style="color:#008000;">//LED:</span></code></td>
 </tr><tr>
 <td class="ln"><a id="d16" href="#d16">220</a></td><td class="code" style="background-color:#efcb05;"><code><span style="color:#008000;">//OneShot125 ESC pin outputs:</span></code></td>
-<td class="ln">196</td><td class="code" style="background-color:#efcb05;"><code>const int ledPin = BoardConfig::status_leds.led1_pin;  <span style="color:#008000;">// PC13</span></code></td>
+<td class="ln">196</td><td class="code" style="background-color:#efcb05;"><code>const Pin ledPin = BoardConfig::status_leds.led1_pin;  <span style="color:#008000;">// PC13</span></code></td>
 </tr><tr>
 <td class="ln"><a id="d16" href="#d16">221</a></td><td class="code" style="background-color:#efcb05;"><code>const int m1Pin = 0;</code></td>
 <td class="ln"></td><td class="code" style="background-color:#c0c0c0;"><code>&nbsp;</code></td>
@@ -4918,8 +4918,8 @@ code { font-family: inherit; }
 <td class="ln">1549</td><td class="code" style="background-color:#ffffff;"><code>    blink_counter = micros();</code></td>
 <td class="ln">1436</td><td class="code" style="background-color:#ffffff;"><code>    blink_counter = micros();</code></td>
 </tr><tr>
-<td class="ln">1550</td><td class="code" style="background-color:#ffffff;"><code>    digitalWrite(13, blinkAlternate); <span style="color:#008000;">//Pin 13 is built in LED</span></code></td>
-<td class="ln">1437</td><td class="code" style="background-color:#ffffff;"><code>    digitalWrite(13, blinkAlternate); <span style="color:#008000;">//Pin 13 is built in LED</span></code></td>
+<td class="ln"><a id="d51" href="#d51">1550</a></td><td class="code" style="background-color:#efcb05;"><code>    digitalWrite(13, blinkAlternate); <span style="color:#008000;">//Pin 13 is built in LED</span></code></td>
+<td class="ln">1437</td><td class="code" style="background-color:#efcb05;"><code>    digitalWrite(ledPin, blinkAlternate); <span style="color:#008000;">//LED (via BoardConfig::status_leds.led1_pin)</span></code></td>
 </tr><tr>
 <td class="ln">1551</td><td class="code" style="background-color:#ffffff;"><code>&nbsp;</code></td>
 <td class="ln">1438</td><td class="code" style="background-color:#ffffff;"><code>&nbsp;</code></td>
@@ -4966,14 +4966,14 @@ code { font-family: inherit; }
 <td class="ln">1565</td><td class="code" style="background-color:#ffffff;"><code>  for (int j = 1; j&lt;= numBlinks; j++) {</code></td>
 <td class="ln">1452</td><td class="code" style="background-color:#ffffff;"><code>  for (int j = 1; j&lt;= numBlinks; j++) {</code></td>
 </tr><tr>
-<td class="ln">1566</td><td class="code" style="background-color:#ffffff;"><code>    digitalWrite(13, LOW);</code></td>
-<td class="ln">1453</td><td class="code" style="background-color:#ffffff;"><code>    digitalWrite(13, LOW);</code></td>
+<td class="ln"><a id="d52" href="#d52">1566</a></td><td class="code" style="background-color:#efcb05;"><code>    digitalWrite(13, LOW);</code></td>
+<td class="ln">1453</td><td class="code" style="background-color:#efcb05;"><code>    digitalWrite(ledPin, LOW);</code></td>
 </tr><tr>
 <td class="ln">1567</td><td class="code" style="background-color:#ffffff;"><code>    delay(downTime);</code></td>
 <td class="ln">1454</td><td class="code" style="background-color:#ffffff;"><code>    delay(downTime);</code></td>
 </tr><tr>
-<td class="ln">1568</td><td class="code" style="background-color:#ffffff;"><code>    digitalWrite(13, HIGH);</code></td>
-<td class="ln">1455</td><td class="code" style="background-color:#ffffff;"><code>    digitalWrite(13, HIGH);</code></td>
+<td class="ln"><a id="d53" href="#d53">1568</a></td><td class="code" style="background-color:#efcb05;"><code>    digitalWrite(13, HIGH);</code></td>
+<td class="ln">1455</td><td class="code" style="background-color:#efcb05;"><code>    digitalWrite(ledPin, HIGH);</code></td>
 </tr><tr>
 <td class="ln">1569</td><td class="code" style="background-color:#ffffff;"><code>    delay(upTime);</code></td>
 <td class="ln">1456</td><td class="code" style="background-color:#ffffff;"><code>    delay(upTime);</code></td>
@@ -4996,37 +4996,37 @@ code { font-family: inherit; }
 <td class="ln">1575</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 <td class="ln">1462</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 </tr><tr>
-<td class="ln"><a id="d51" href="#d51">1576</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH1:&quot;</span>));</code></td>
+<td class="ln"><a id="d54" href="#d54">1576</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH1:&quot;</span>));</code></td>
 <td class="ln">1463</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; CH1:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1577</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(channel_1_pwm);</code></td>
 <td class="ln">1464</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(channel_1_pwm);</code></td>
 </tr><tr>
-<td class="ln"><a id="d52" href="#d52">1578</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH2:&quot;</span>));</code></td>
+<td class="ln"><a id="d55" href="#d55">1578</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH2:&quot;</span>));</code></td>
 <td class="ln">1465</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; CH2:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1579</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(channel_2_pwm);</code></td>
 <td class="ln">1466</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(channel_2_pwm);</code></td>
 </tr><tr>
-<td class="ln"><a id="d53" href="#d53">1580</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH3:&quot;</span>));</code></td>
+<td class="ln"><a id="d56" href="#d56">1580</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH3:&quot;</span>));</code></td>
 <td class="ln">1467</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; CH3:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1581</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(channel_3_pwm);</code></td>
 <td class="ln">1468</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(channel_3_pwm);</code></td>
 </tr><tr>
-<td class="ln"><a id="d54" href="#d54">1582</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH4:&quot;</span>));</code></td>
+<td class="ln"><a id="d57" href="#d57">1582</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH4:&quot;</span>));</code></td>
 <td class="ln">1469</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; CH4:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1583</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(channel_4_pwm);</code></td>
 <td class="ln">1470</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(channel_4_pwm);</code></td>
 </tr><tr>
-<td class="ln"><a id="d55" href="#d55">1584</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH5:&quot;</span>));</code></td>
+<td class="ln"><a id="d58" href="#d58">1584</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH5:&quot;</span>));</code></td>
 <td class="ln">1471</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; CH5:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1585</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(channel_5_pwm);</code></td>
 <td class="ln">1472</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(channel_5_pwm);</code></td>
 </tr><tr>
-<td class="ln"><a id="d56" href="#d56">1586</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH6:&quot;</span>));</code></td>
+<td class="ln"><a id="d59" href="#d59">1586</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; CH6:&quot;</span>));</code></td>
 <td class="ln">1473</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; CH6:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1587</td><td class="code" style="background-color:#ffffff;"><code>    Serial.println(channel_6_pwm);</code></td>
@@ -5050,25 +5050,25 @@ code { font-family: inherit; }
 <td class="ln">1593</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 <td class="ln">1480</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 </tr><tr>
-<td class="ln"><a id="d57" href="#d57">1594</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;thro_des:&quot;</span>));</code></td>
+<td class="ln"><a id="d60" href="#d60">1594</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;thro_des:&quot;</span>));</code></td>
 <td class="ln">1481</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot;thro_des:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1595</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(thro_des);</code></td>
 <td class="ln">1482</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(thro_des);</code></td>
 </tr><tr>
-<td class="ln"><a id="d58" href="#d58">1596</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; roll_des:&quot;</span>));</code></td>
+<td class="ln"><a id="d61" href="#d61">1596</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; roll_des:&quot;</span>));</code></td>
 <td class="ln">1483</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; roll_des:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1597</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(roll_des);</code></td>
 <td class="ln">1484</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(roll_des);</code></td>
 </tr><tr>
-<td class="ln"><a id="d59" href="#d59">1598</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; pitch_des:&quot;</span>));</code></td>
+<td class="ln"><a id="d62" href="#d62">1598</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; pitch_des:&quot;</span>));</code></td>
 <td class="ln">1485</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; pitch_des:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1599</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(pitch_des);</code></td>
 <td class="ln">1486</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(pitch_des);</code></td>
 </tr><tr>
-<td class="ln"><a id="d60" href="#d60">1600</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; yaw_des:&quot;</span>));</code></td>
+<td class="ln"><a id="d63" href="#d63">1600</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; yaw_des:&quot;</span>));</code></td>
 <td class="ln">1487</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; yaw_des:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1601</td><td class="code" style="background-color:#ffffff;"><code>    Serial.println(yaw_des);</code></td>
@@ -5092,19 +5092,19 @@ code { font-family: inherit; }
 <td class="ln">1607</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 <td class="ln">1494</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 </tr><tr>
-<td class="ln"><a id="d61" href="#d61">1608</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;GyroX:&quot;</span>));</code></td>
+<td class="ln"><a id="d64" href="#d64">1608</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;GyroX:&quot;</span>));</code></td>
 <td class="ln">1495</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot;GyroX:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1609</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(GyroX);</code></td>
 <td class="ln">1496</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(GyroX);</code></td>
 </tr><tr>
-<td class="ln"><a id="d62" href="#d62">1610</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; GyroY:&quot;</span>));</code></td>
+<td class="ln"><a id="d65" href="#d65">1610</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; GyroY:&quot;</span>));</code></td>
 <td class="ln">1497</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; GyroY:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1611</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(GyroY);</code></td>
 <td class="ln">1498</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(GyroY);</code></td>
 </tr><tr>
-<td class="ln"><a id="d63" href="#d63">1612</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; GyroZ:&quot;</span>));</code></td>
+<td class="ln"><a id="d66" href="#d66">1612</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; GyroZ:&quot;</span>));</code></td>
 <td class="ln">1499</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; GyroZ:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1613</td><td class="code" style="background-color:#ffffff;"><code>    Serial.println(GyroZ);</code></td>
@@ -5128,19 +5128,19 @@ code { font-family: inherit; }
 <td class="ln">1619</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 <td class="ln">1506</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 </tr><tr>
-<td class="ln"><a id="d64" href="#d64">1620</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;AccX:&quot;</span>));</code></td>
+<td class="ln"><a id="d67" href="#d67">1620</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;AccX:&quot;</span>));</code></td>
 <td class="ln">1507</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot;AccX:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1621</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(AccX);</code></td>
 <td class="ln">1508</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(AccX);</code></td>
 </tr><tr>
-<td class="ln"><a id="d65" href="#d65">1622</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; AccY:&quot;</span>));</code></td>
+<td class="ln"><a id="d68" href="#d68">1622</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; AccY:&quot;</span>));</code></td>
 <td class="ln">1509</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; AccY:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1623</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(AccY);</code></td>
 <td class="ln">1510</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(AccY);</code></td>
 </tr><tr>
-<td class="ln"><a id="d66" href="#d66">1624</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; AccZ:&quot;</span>));</code></td>
+<td class="ln"><a id="d69" href="#d69">1624</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; AccZ:&quot;</span>));</code></td>
 <td class="ln">1511</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; AccZ:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1625</td><td class="code" style="background-color:#ffffff;"><code>    Serial.println(AccZ);</code></td>
@@ -5164,19 +5164,19 @@ code { font-family: inherit; }
 <td class="ln">1631</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 <td class="ln">1518</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 </tr><tr>
-<td class="ln"><a id="d67" href="#d67">1632</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;MagX:&quot;</span>));</code></td>
+<td class="ln"><a id="d70" href="#d70">1632</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;MagX:&quot;</span>));</code></td>
 <td class="ln">1519</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot;MagX:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1633</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(MagX);</code></td>
 <td class="ln">1520</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(MagX);</code></td>
 </tr><tr>
-<td class="ln"><a id="d68" href="#d68">1634</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; MagY:&quot;</span>));</code></td>
+<td class="ln"><a id="d71" href="#d71">1634</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; MagY:&quot;</span>));</code></td>
 <td class="ln">1521</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; MagY:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1635</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(MagY);</code></td>
 <td class="ln">1522</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(MagY);</code></td>
 </tr><tr>
-<td class="ln"><a id="d69" href="#d69">1636</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; MagZ:&quot;</span>));</code></td>
+<td class="ln"><a id="d72" href="#d72">1636</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; MagZ:&quot;</span>));</code></td>
 <td class="ln">1523</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; MagZ:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1637</td><td class="code" style="background-color:#ffffff;"><code>    Serial.println(MagZ);</code></td>
@@ -5200,19 +5200,19 @@ code { font-family: inherit; }
 <td class="ln">1643</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 <td class="ln">1530</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 </tr><tr>
-<td class="ln"><a id="d70" href="#d70">1644</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;roll:&quot;</span>));</code></td>
+<td class="ln"><a id="d73" href="#d73">1644</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;roll:&quot;</span>));</code></td>
 <td class="ln">1531</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot;roll:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1645</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(roll_IMU);</code></td>
 <td class="ln">1532</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(roll_IMU);</code></td>
 </tr><tr>
-<td class="ln"><a id="d71" href="#d71">1646</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; pitch:&quot;</span>));</code></td>
+<td class="ln"><a id="d74" href="#d74">1646</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; pitch:&quot;</span>));</code></td>
 <td class="ln">1533</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; pitch:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1647</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(pitch_IMU);</code></td>
 <td class="ln">1534</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(pitch_IMU);</code></td>
 </tr><tr>
-<td class="ln"><a id="d72" href="#d72">1648</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; yaw:&quot;</span>));</code></td>
+<td class="ln"><a id="d75" href="#d75">1648</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; yaw:&quot;</span>));</code></td>
 <td class="ln">1535</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; yaw:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1649</td><td class="code" style="background-color:#ffffff;"><code>    Serial.println(yaw_IMU);</code></td>
@@ -5236,19 +5236,19 @@ code { font-family: inherit; }
 <td class="ln">1655</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 <td class="ln">1542</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 </tr><tr>
-<td class="ln"><a id="d73" href="#d73">1656</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;roll_PID:&quot;</span>));</code></td>
+<td class="ln"><a id="d76" href="#d76">1656</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;roll_PID:&quot;</span>));</code></td>
 <td class="ln">1543</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot;roll_PID:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1657</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(roll_PID);</code></td>
 <td class="ln">1544</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(roll_PID);</code></td>
 </tr><tr>
-<td class="ln"><a id="d74" href="#d74">1658</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; pitch_PID:&quot;</span>));</code></td>
+<td class="ln"><a id="d77" href="#d77">1658</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; pitch_PID:&quot;</span>));</code></td>
 <td class="ln">1545</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; pitch_PID:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1659</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(pitch_PID);</code></td>
 <td class="ln">1546</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(pitch_PID);</code></td>
 </tr><tr>
-<td class="ln"><a id="d75" href="#d75">1660</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; yaw_PID:&quot;</span>));</code></td>
+<td class="ln"><a id="d78" href="#d78">1660</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; yaw_PID:&quot;</span>));</code></td>
 <td class="ln">1547</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; yaw_PID:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1661</td><td class="code" style="background-color:#ffffff;"><code>    Serial.println(yaw_PID);</code></td>
@@ -5272,37 +5272,37 @@ code { font-family: inherit; }
 <td class="ln">1667</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 <td class="ln">1554</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 </tr><tr>
-<td class="ln"><a id="d76" href="#d76">1668</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;m1_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d79" href="#d79">1668</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;m1_command:&quot;</span>));</code></td>
 <td class="ln">1555</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot;m1_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1669</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(m1_command_PWM);</code></td>
 <td class="ln">1556</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(m1_command_PWM);</code></td>
 </tr><tr>
-<td class="ln"><a id="d77" href="#d77">1670</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; m2_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d80" href="#d80">1670</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; m2_command:&quot;</span>));</code></td>
 <td class="ln">1557</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; m2_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1671</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(m2_command_PWM);</code></td>
 <td class="ln">1558</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(m2_command_PWM);</code></td>
 </tr><tr>
-<td class="ln"><a id="d78" href="#d78">1672</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; m3_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d81" href="#d81">1672</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; m3_command:&quot;</span>));</code></td>
 <td class="ln">1559</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; m3_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1673</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(m3_command_PWM);</code></td>
 <td class="ln">1560</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(m3_command_PWM);</code></td>
 </tr><tr>
-<td class="ln"><a id="d79" href="#d79">1674</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; m4_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d82" href="#d82">1674</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; m4_command:&quot;</span>));</code></td>
 <td class="ln">1561</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; m4_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1675</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(m4_command_PWM);</code></td>
 <td class="ln">1562</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(m4_command_PWM);</code></td>
 </tr><tr>
-<td class="ln"><a id="d80" href="#d80">1676</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; m5_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d83" href="#d83">1676</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; m5_command:&quot;</span>));</code></td>
 <td class="ln">1563</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; m5_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1677</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(m5_command_PWM);</code></td>
 <td class="ln">1564</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(m5_command_PWM);</code></td>
 </tr><tr>
-<td class="ln"><a id="d81" href="#d81">1678</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; m6_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d84" href="#d84">1678</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; m6_command:&quot;</span>));</code></td>
 <td class="ln">1565</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; m6_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1679</td><td class="code" style="background-color:#ffffff;"><code>    Serial.println(m6_command_PWM);</code></td>
@@ -5326,43 +5326,43 @@ code { font-family: inherit; }
 <td class="ln">1685</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 <td class="ln">1572</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 </tr><tr>
-<td class="ln"><a id="d82" href="#d82">1686</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;s1_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d85" href="#d85">1686</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;s1_command:&quot;</span>));</code></td>
 <td class="ln">1573</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot;s1_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1687</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s1_command_PWM);</code></td>
 <td class="ln">1574</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s1_command_PWM);</code></td>
 </tr><tr>
-<td class="ln"><a id="d83" href="#d83">1688</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s2_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d86" href="#d86">1688</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s2_command:&quot;</span>));</code></td>
 <td class="ln">1575</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; s2_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1689</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s2_command_PWM);</code></td>
 <td class="ln">1576</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s2_command_PWM);</code></td>
 </tr><tr>
-<td class="ln"><a id="d84" href="#d84">1690</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s3_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d87" href="#d87">1690</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s3_command:&quot;</span>));</code></td>
 <td class="ln">1577</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; s3_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1691</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s3_command_PWM);</code></td>
 <td class="ln">1578</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s3_command_PWM);</code></td>
 </tr><tr>
-<td class="ln"><a id="d85" href="#d85">1692</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s4_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d88" href="#d88">1692</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s4_command:&quot;</span>));</code></td>
 <td class="ln">1579</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; s4_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1693</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s4_command_PWM);</code></td>
 <td class="ln">1580</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s4_command_PWM);</code></td>
 </tr><tr>
-<td class="ln"><a id="d86" href="#d86">1694</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s5_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d89" href="#d89">1694</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s5_command:&quot;</span>));</code></td>
 <td class="ln">1581</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; s5_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1695</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s5_command_PWM);</code></td>
 <td class="ln">1582</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s5_command_PWM);</code></td>
 </tr><tr>
-<td class="ln"><a id="d87" href="#d87">1696</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s6_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d90" href="#d90">1696</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s6_command:&quot;</span>));</code></td>
 <td class="ln">1583</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; s6_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1697</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s6_command_PWM);</code></td>
 <td class="ln">1584</td><td class="code" style="background-color:#ffffff;"><code>    Serial.print(s6_command_PWM);</code></td>
 </tr><tr>
-<td class="ln"><a id="d88" href="#d88">1698</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s7_command:&quot;</span>));</code></td>
+<td class="ln"><a id="d91" href="#d91">1698</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot; s7_command:&quot;</span>));</code></td>
 <td class="ln">1585</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot; s7_command:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1699</td><td class="code" style="background-color:#ffffff;"><code>    Serial.println(s7_command_PWM);</code></td>
@@ -5386,7 +5386,7 @@ code { font-family: inherit; }
 <td class="ln">1705</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 <td class="ln">1592</td><td class="code" style="background-color:#ffffff;"><code>    print_counter = micros();</code></td>
 </tr><tr>
-<td class="ln"><a id="d89" href="#d89">1706</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;dt:&quot;</span>));</code></td>
+<td class="ln"><a id="d92" href="#d92">1706</a></td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(F(<span style="color:#800080;">&quot;dt:&quot;</span>));</code></td>
 <td class="ln">1593</td><td class="code" style="background-color:#efcb05;"><code>    Serial.print(<span style="color:#800080;">&quot;dt:&quot;</span>);</code></td>
 </tr><tr>
 <td class="ln">1707</td><td class="code" style="background-color:#ffffff;"><code>    Serial.println(dt*1000000.0);</code></td>
@@ -5479,7 +5479,7 @@ code { font-family: inherit; }
 </tbody>
 </table>
 <p style="font-size:10pt; color:#606060; margin-top:10px; font-family: sans-serif;">
-Left: 1735 lines | Right: 1622 lines | 89 difference regions
+Left: 1735 lines | Right: 1622 lines | 92 difference regions
 </p>
 </body>
 </html>
