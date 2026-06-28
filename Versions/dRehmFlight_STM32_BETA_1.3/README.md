@@ -50,8 +50,9 @@ This port preserves 100% of Nicholas Rehm's flight control logic while adapting 
 - **Preserved**: Error correction, low-pass filtering, all math
 
 ### 2. Radio RX - SerialRx Library
-- `radioSetup()`: SerialRx initialization (IBus default, SBUS optional)
-- `updateRadioChannels()`: Adapter pattern (SerialRx → channel_X_raw)
+- `radioSetup()`: SerialRx initialization (SBUS default, IBus optional)
+- `updateRadioChannels()`: Adapter pattern (SerialRx → channel_X_raw). SBUS→µs conversion uses
+  the iNav formula via `channelToPWM()` (vs the Teensy's hand-tuned `*0.615 + 895` mapping)
 - **Optional**: DMA mode for reduced interrupt overhead
 
 ### 3. Motor Control - MotorManager (TimerPWM)
@@ -70,15 +71,26 @@ This port preserves 100% of Nicholas Rehm's flight control logic while adapting 
 
 ## What Did NOT Change
 
-**100% Preserved Flight Control**:
-- ✅ PID Controllers (`controlANGLE()`, `controlRATE()`)
+**Flight Control Law Preserved** (numerically identical for the default 6-DOF config):
+- ✅ PID Controllers (`controlANGLE()`, `controlANGLE2()`, `controlRATE()`)
 - ✅ Control Mixer (`controlMixer()`)
 - ✅ Madgwick Filter (`Madgwick6DOF()`)
-- ✅ Command Scaling (`scaleCommands()`)
+- ✅ Command Scaling — motor path (`scaleCommands()`, `*125 + 125`)
 - ✅ Failsafe Logic (`failSafe()`)
 - ✅ Arming Logic (`armedStatus()`)
 - ✅ Loop Timing (2kHz)
-- ✅ All PID Tuning Parameters
+- ✅ All PID Tuning Parameters and filter coefficients
+
+**Two minor edits inside flight-logic files** (neither changes the control law):
+- `Madgwick()` — the compile-time `#if defined USE_MPU6050_I2C → Madgwick6DOF()` short-circuit
+  was removed. On the default 6-DOF IMUs the existing runtime `mx==my==mz==0` guard routes to
+  `Madgwick6DOF()` anyway, so the result is identical — just no longer byte-for-byte.
+- `scaleCommands()` servo path — servo output changes from a 0–180° angle (Teensy `PWMServo`)
+  to a 1000–2000 µs pulse (`ServoManager`). Motor scaling is unchanged.
+
+**Sensor-config note:** the IMU library's BALANCED preset enables on-chip filtering ahead of
+the same software `B_gyro`/`B_accel` filters, whereas the Teensy ran the sensor DLPF off. The
+raw data feeding the (identical) software filters is therefore not configured identically.
 
 ## Metrics (NUCLEO_F411RE)
 
@@ -96,8 +108,8 @@ Enable features in the main `.ino` file:
 ```cpp
 // RC Receiver (required - choose one protocol)
 #define USE_SERIAL_RX
-#define USE_IBUS_RX    // IBus protocol (FlySky) - default
-// #define USE_SBUS_RX // SBUS protocol (FrSky, etc.)
+// #define USE_IBUS_RX // IBus protocol (FlySky)
+#define USE_SBUS_RX    // SBUS protocol (FrSky, etc.) - default
 // #define USE_RC_DMA  // Optional: UART DMA for reduced IRQ overhead
 
 // IMU (required - choose one)
@@ -163,70 +175,19 @@ Serial.println("Status message");
 **Example Output**:
 ```
 dRehmFlight STM32 BETA 1.3
-Radio RX initialized (interrupt mode)
+Radio RX initialized
 IMU initialized successfully
 Gyro X:0.35 Y:-0.81 Z:0.30
 ```
 
-## Current Status
+## Status
 
-**Port Status: ✅ Complete - Ready for Hardware Testing**
-
-| Component | Status |
-|-----------|--------|
-| IMU initialization | ✅ Working (auto-detection) |
-| IMU data reading | ✅ Working (validated values) |
-| Radio RX (IBus/SBUS) | ✅ Working (interrupt + DMA modes) |
-| Motor control | ✅ Working (OneShot125 via MotorManager) |
-| Servo control | ✅ Working (50Hz via ServoManager) |
-| 2kHz loop timing | ✅ Working |
-| Serial debugging | ✅ Working |
-| Multi-board support | ✅ Working (5 boards) |
-
-**Hardware Validation**:
-- ✅ IMU communication verified (WHO_AM_I responses)
-- ✅ IMU self-test passed
-- ✅ Gyro readings validated (stationary drift as expected)
-- 📋 RC receiver bench testing pending
-- 📋 Motor control bench testing pending
-- 📋 Flight testing pending
-
-## Next Steps
-
-### Phase 1: IMU Data Validation ✅ COMPLETE
-
-FSR (Full Scale Range) configuration verified:
-- ±250 DPS: 131 LSB/°/s sensitivity (default, highest resolution)
-- ±2000 DPS: 16.4 LSB/°/s sensitivity (widest range)
-
-Both configurations produce correct physical values when properly scaled.
-
-### Phase 2: Hardware Bench Testing
-
-**RC Receiver**:
-- Connect FlySky FS-iA6B (IBus) or FrSky (SBUS) receiver
-- Verify channel mapping (throttle, roll, pitch, yaw)
-- Test failsafe behavior
-- Validate arming/disarming logic
-
-**Motor Control**:
-- Connect ESCs to motor outputs
-- Test OneShot125 pulse generation (125-250µs)
-- Verify motor response to stick inputs
-- Confirm failsafe stops motors
-
-### Phase 3: Flight Testing
-
-- Props-on motor response testing
-- PID tuning on bench
-- Initial hover attempts
-- Progressive flight envelope expansion
-
-### Phase 4: Flight Controller Deployment
-
-- Deploy to target flight controller (OPEN_REVO, NERO F7, MATEK H743)
-- Verify all peripherals
-- Production flight testing
+This is the **port baseline**: it establishes the STM32 hardware-abstraction layer (IMU,
+SerialRx, TimerPWM, BoardConfig) with the flight control law unchanged from the Teensy. Flight
+validation and tuning happened on the downstream sketches — `sketches/dRehmFlight_SCHED`
+(scheduler + 4-layer failsafe) and `sketches/dRehmFlight_SCHED_MSP_INI` (MSP/CLI + persistence).
+Use those for hardware deployment; this version is kept as the clean minimal-change reference
+for the Teensy → STM32 diff.
 
 ## License
 
