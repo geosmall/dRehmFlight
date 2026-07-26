@@ -1,100 +1,113 @@
-![dRehmFlight Logo](https://github.com/nickrehm/dRehmFlight/blob/master/dRehmFlight%20Logo.png)
+# dRehmFlight STM32
 
-[Intro Video](https://www.youtube.com/watch?v=tlD0C5CrWcA&lc=Ugx6m02xjHk8QH19vd94AaABAg)
+[Nicholas Rehm's dRehmFlight](https://github.com/nickrehm/dRehmFlight) — the
+teaching-oriented VTOL flight controller — ported to STM32 and evolved into a
+multi-board flight stack. **The control law is untouched**: every change is in
+the I/O boundary, loop architecture, sensor-axis handling, or configuration UX,
+never the PID math. The repo carries the full evolution as diffable in-repo
+stages:
 
-[RcGroups Support Thread](https://www.rcgroups.com/forums/showthread.php?3706571-dRehmFlight-VTOL-Teensy-Flight-Controller-and-Stabilization)
+| Stage | Directory | What it adds |
+|-------|-----------|--------------|
+| 0 | `Versions/dRehmFlight_Teensy_BETA_1.3/` | Upstream Teensy original |
+| 1 | `Versions/dRehmFlight_STM32_BETA_1.3/` | STM32 hardware-abstraction port (F4/F7/H7) |
+| 2 | `Versions/dRehmFlight_STM32_SCHED/` | INav cooperative scheduler, 4-layer RX failsafe, board-alignment matrix, CRSF/ELRS, DShot |
+| 3 | `Versions/dRehmFlight_STM32_SCHED_MSP_INI/` | MSP telemetry, modal CLI, blackbox, internal-flash parameter persistence |
 
-[What exactly is dRehmFlight VTOL?](https://www.drehmflight.com/drehmflight-vtol)
+**Build and fly `dRehmFlight_STM32_SCHED_MSP_INI`.** It is the maintained,
+flight-validated configuration; the earlier stages are kept as lineage
+artifacts for study and diffing. Full stage-by-stage change record:
+`doc/DF_EVOLUTION.md`.
 
-## Overview
+**Companion: [dRehm Configurator](https://geosmall.github.io/dRehm-configurator/)**
+— a browser-based configurator PWA (Chrome/Edge, Web Serial; source:
+[geosmall/dRehm-configurator](https://github.com/geosmall/dRehm-configurator))
+that speaks this firmware's MSP telemetry and CLI. Connect over USB to watch
+live status/attitude, RC channels, and sensor graphs; set parameters in the
+grouped PID/filter editor and save them to the board; or use its CLI terminal
+to enter the bootloader (`bl`) and reflash from the Arduino IDE (once the UF2
+bootloader is present on the board).
 
-dRehmFlight is the flight controller for hobbyists, hackers, and non-coders interested in stabilizing their wacky and unique flying creations. The code and supporting documentation is built to bring someone up to speed on VTOL flight stabilization concepts as quickly and painlessly as possible. The code is written and presented in a way that is intuitive, easy to follow, and most importantly: all in one place. No more digging through countless folders and confusing classes just to add an 'if' statement for your custom drone application. This flight controller uses an Arduino-compatible microcontroller, so there is no confusing flashing or compiling process necessary. If you can use Arduino, you can start expanding the capabilites of this flight controller to your liking.
+## Supported boards
 
-dRehmFlight has been used as a teaching tool for aircraft stabilization and flight control principles in universities and tech companies around the world. It is not meant to out-perform other flight controller packages on the market, or be used in a commercial sense. It is best suited for rapid prototyping or allowing a radio control hobbyist to get their feet wet in flight control code for their VTOL project. Much more information is included in the dRehmFlight VTOL Documentation .pdf.
+Board is selected via the Arduino board menu (`pnum`). "Persistence" = tuning
+survives reboot (internal-flash config region); RAM-only boards lose `set`
+changes at power-off.
 
-This code is entirely free to use and will stay that way forever. If you found this helpful for your project, donations are appreciated: [Paypal Donation](https://www.paypal.me/NicholasRehm)
+| Board | MCU | IMU | Persistence |
+|-------|-----|-----|-------------|
+| BEFH_BETAFPVF405 (Pavo Pico II AIO) | STM32F405 | ICM-42688-P | Internal flash |
+| BEFH_BETAFPVG473 (Air75 AIO) | STM32G473 | ICM-42688-P | Internal flash |
+| OPEN_REVO | STM32F405 | MPU-6000 | Internal flash |
+| BKMN_NERO | STM32F722 | ICM-20602 | Internal flash |
+| JHEF_JHEF411 (Noxe F411) | STM32F411 | ICM-42688-P | Internal flash |
+| MATEK_H743VI | STM32H743 | ICM-42688-P | Internal flash |
+| DEVEBOX_H743 | STM32H743 | ICM-42688-P | Internal flash |
+| WEACT_G474CE | STM32G474 | ICM-42688-P | Internal flash |
+| BLACKPILL_F411CE | STM32F411 | MPU-9250 | RAM-only |
+| NUCLEO_F411RE / NUCLEO_G474RE | F411 / G474 | ICM-42688-P | RAM-only |
 
-**New in Beta 1.3:**
+Flight-validated: BEFH_BETAFPVG473 (Air75 whoop) and BEFH_BETAFPVF405
+(Pavo Pico II). Other targets are build-verified and bench-tested to varying
+degrees — see `doc/BOARD_ALIGNMENT_REQUIREMENTS.md` for the honest per-target
+validation ledger before trusting one in the air.
 
-- Spektrum DSM Satellite RX Support
-- One-time IMU calibration
-- ESC calibration functionality
-- Motor arming bug fix
-- Code and comment clean up
-- Small bug fixes
+## Install and build
 
+Requires the **`STM32_Robotics` Arduino core, `robo-2.1.0` or later**
+([geosmall/Arduino_Core_STM32](https://github.com/geosmall/Arduino_Core_STM32) —
+a fork of the STM32 Arduino core with type-safe pins, peripheral-aware bus
+constructors, DShot, and UF2 bootloader support).
 
-### Hardware Requirements
-This flight controller is based off of the Teensy 4.0 microcontroller and MPU6050 6DOF IMU. The following components (available on Amazon) are required to complete the flight controller assembly:
+**Arduino IDE:** Preferences → Additional Board Manager URLs →
+`https://github.com/geosmall/BoardManagerFiles/raw/main/package_stm32_robotics_index.json`,
+then Boards Manager → install "STM32 Robotics Core", pick your board under
+Tools, open `Versions/dRehmFlight_STM32_SCHED_MSP_INI/dRehmFlight_STM32_SCHED_MSP_INI.ino`.
+(Works on Windows, macOS, and Linux. arduino-cli users: the same index URL and
+core work from the command line — full steps in the sketch README.)
 
+**Flashing** flight controllers with the UF2 bootloader installed: enter the
+bootloader (CLI `bl` command, or MSP reboot-to-bootloader), a UF2 drive
+appears, then upload with `upload_method=bootuf2Method` or drag the built
+`.uf2`. The UF2 bootloader binaries and first-time installation / recovery
+documentation live in the [core repository](https://github.com/geosmall/Arduino_Core_STM32)
+(`bootloaders/`, `doc/`).
 
-**Teensy 4.0**: https://amzn.to/3oFG3QN
+## Before you fly — safety gates
 
-**Alternative Links**: [Sparkfun](https://www.sparkfun.com/products/15583), [Adafruit](https://www.adafruit.com/product/4323), [Electromaker](https://www.electromaker.io/shop/product/teensy-40?gclid=Cj0KCQjwxIOXBhCrARIsAL1QFCYcZsU4tRXVgeqfOOJyg_zPV2MXTeJM2QwJ6zafMTsCb6MjWthk7r8aAn6hEALw_wcB)
+This is firmware for spinning blades. Work through these in order; skipping
+them is how flyaways happen:
 
-Due to supply chain issues, the Teensy 4.0 has been frequently out of stock throughout 2022. The Teensy 4.1 is generally in stock more often and is immediately compatible with the dRehmFlight pin mappings (plus you get extra bonus pins!): https://amzn.to/3c1OSSw
+1. **IMU alignment bench check** (`doc/IMU_ALIGNMENT_BENCH_PROCEDURE.md`,
+   `tools/imu_align_check.py`) — props off, read-only. Run before the first
+   flight of ANY new or changed board alignment. A wrong axis sign flips a
+   correction into an amplification the moment the craft leaves the ground.
+2. **Motor order / direction check** (`tools/motor_order_check.py`, or the
+   CLI `motor <1-4> <pct>` single-motor bench test) — props off, verify
+   pad→position mapping and spin direction against your frame.
+3. **Props-off arm test** — arm, verify throttle response and throttle-cut
+   on all four motors, verify disarm.
+4. **First hover** — props on only after 1–3 pass, in a safe area, low, brief.
 
+The `align_board_*` and `motor_output_reordering` parameters are runtime
+(`set`/`save`) — most boards can be adapted without recompiling, but every
+alignment change re-triggers gate 1.
 
-**GY-521 MPU6050 IMU**: https://amzn.to/3edF1Vn
+## Tuning and tools
 
-These (and all Amazon links contained within the supporting documentation) are Amazon Affiliate links; by purchasing from these, I receive a small portion of the revenue at no cost to you. I appreciate any and all support! [Buy all of the parts here.](https://www.amazon.com/shop/nicholasrehm/list/1NDPB7E0VMZOP?ref_=aip_sf_list_spv_ons_mixed_d)
+- All gains and filters are runtime CLI parameters: `#` enters the CLI,
+  `set`, `save`, `diff all` (Betaflight-style paste-back). See
+  `Versions/dRehmFlight_STM32_SCHED_MSP_INI/README.md` and `Versions/dRehmFlight_STM32_SCHED_MSP_INI/QUAD_TUNING.md`.
+- The [dRehm Configurator](https://geosmall.github.io/dRehm-configurator/)
+  (see top) offers the same parameter editing and CLI from the browser.
+- `tools/` — host-side helpers that talk to the firmware over USB serial:
+  blackbox fetch (`bb_fetch.py`), MSP queries, restrained-rig test,
+  tune capture with build provenance (`save_tune.sh`).
+- `tunes/` — reference tunes for the flight-validated craft, self-stamped
+  with the exact firmware commit they flew on.
 
-### Software Requirments
-Code is uploaded to the board using the Arduino IDE; download the latest version here: https://www.arduino.cc/en/main/software
+## License
 
-To connect to the Teensy, you must also download and install the Teensyduino arduino add-on; download and instructions available here: https://www.pjrc.com/teensy/td_download.html
-
-
-## Tutorial Videos
-[Building the Flight Controller Hardware](https://www.youtube.com/watch?v=EBXBEB-Xv7w&)
-
-[Setting Up Your Radio Connection](https://www.youtube.com/watch?v=Wdc1o6eSsMo)
-
-[Mounting and Configuring the IMU](https://www.youtube.com/watch?v=pi4PiBFPt70)
-
-[How the Flight Controller Code Works](https://www.youtube.com/watch?v=_n5GBudUf5Q&lc=UgwvXX18w7FtJH1ClLl4AaABAg)
-
-[Building and Coding an RC F-35 VTOL](https://www.youtube.com/watch?v=RqdcZD0ZoUk)
-
-## Flight Videos
-dRehmflight has been successfully implemented on the following platforms:
-
-**Autonomous Quadrotor:** https://www.youtube.com/watch?v=p8frNNYQNV4
-
-**Quadrotor Biplane VTOL:** https://www.youtube.com/watch?v=rk4tUKM6bd0
-
-**Dual Cyclocopter:** https://www.youtube.com/watch?v=JoVmejDsMrM&
-
-**VTOL F-35 Tricopter:** https://www.youtube.com/watch?v=RqdcZD0ZoUk
-
-**Model SpaceX Starhopper:** https://www.youtube.com/watch?v=VsyFejn40Ss
-
-**Model SpaceX Starship:** https://www.youtube.com/watch?v=5lwH7xJnB4I
-
-**Inverted Pendulum Drone Stabilization:** https://www.youtube.com/watch?v=XmYRQi48s-8
-
-**Fixed Wing Ground Effect Vehicle:** https://www.youtube.com/watch?v=uaY2G5Kbj_g
-
-**Spinning Tricopter VTOL:** https://www.youtube.com/watch?v=7JH1_ZKV7t4
-
-**Model Joby EVTOL:** https://www.youtube.com/watch?v=Dd2N_lyO_SQ
-
-**Model V-22 Osprey:** https://www.youtube.com/watch?v=2OGkYfOs9EU
-
-**Tricopter Tailsitter:** https://www.youtube.com/watch?v=8MJNfkEBRMY
-
-**Tail-less Albatross:** https://www.youtube.com/watch?v=1ifR_cvjpjk
-
-**Bicopter VTOL:** https://www.youtube.com/watch?v=XPXN0QejqM0
-
-
-I would love to see your flying creations and maybe feature them here as well. Please email me at NicholasRehmYT@gmail.com with any videos/pics of your project. -Nick Rehm
-
-
-## Disclaimer
-This code is a shared, open source flight controller for small micro aerial vehicles and is intended to be modified to suit your needs. It is NOT intended to be used on manned vehicles. I do not claim any responsibility for any damage or injury that may be inflicted as a result of the use of this code. Use and modify at your own risk. More specifically put:
-
-THIS SOFTWARE IS PROVIDED BY THE CONTRIBUTORS "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
-
-[![Hits](https://hits.seeyoufarm.com/api/count/incr/badge.svg?url=https%3A%2F%2Fgithub.com%2Fnickrehm%2FdRehmFlight&count_bg=%23E30F0F&title_bg=%23555555&icon=&icon_color=%23E7E7E7&title=hits&edge_flat=false)](https://hits.seeyoufarm.com)
-
+GPL v3, same as upstream dRehmFlight (`LICENSE`). The bundled INav-derived
+scheduler is likewise GPL. Copyright original work Nicholas Rehm; STM32
+port and flight-stack evolution by the maintainers of this fork.

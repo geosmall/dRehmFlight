@@ -1,0 +1,36 @@
+# dRehmFlight diff all - fw_git: 90f0ebcce  branch: master  built: 2026-06-29T18:43:23Z
+# board: BETAFPV-G473 / DRHM 1.4.0
+
+set Kp_roll_angle = 0.200000
+set Ki_roll_angle = 0.300000
+set Kd_roll_angle = 0.050000
+set Kp_pitch_angle = 0.200000
+set Ki_pitch_angle = 0.300000
+set Kd_pitch_angle = 0.050000
+set Kp_yaw = 0.300000
+set Ki_yaw = 0.050000
+set Kd_yaw = 0.000150
+set Kp_roll_rate = 0.150000
+set Ki_roll_rate = 0.200000
+set Kd_roll_rate = 0.000200
+set Kp_pitch_rate = 0.150000
+set Ki_pitch_rate = 0.200000
+set Kd_pitch_rate = 0.000200
+set B_loop_roll = 0.900000
+set B_loop_pitch = 0.900000
+set i_limit = 25.000000
+set maxRoll = 30.000000
+set maxPitch = 30.000000
+set maxYaw = 160.000000
+set thr_mid = 0.400000
+set thr_expo = 0.550000
+set throttle_limit = 0.750000
+set yaw_motors_reversed = 1.000000
+set motor_idle = 0.060000
+set B_madgwick = 0.040000
+set B_accel = 0.140000
+set B_gyro = 0.100000
+set B_mag = 1.000000
+set AccErrorX = 0.035036
+set AccErrorY = -0.014103
+set AccErrorZ = -0.017705
