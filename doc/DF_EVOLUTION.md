@@ -1,0 +1,94 @@
+# dRehmFlight Evolution: Teensy → STM32 → Scheduler → MSP/CLI
+
+Change summary for the upstream dRehmFlight developers. From a direct source comparison of the
+four versions. **The control law is preserved intact throughout** — every change is in the I/O
+boundary, loop architecture, sensor-axis handling, or ground-station/config UX, never the PID math.
+
+**Preserved across all stages:** `controlANGLE/ANGLE2/RATE`, control mixer, Madgwick filter body,
+command scaling, throttle-cut, all PID gains and filter coefficients, the 2 kHz flight rate.
+
+## Stage 0 — Teensy BETA 1.3 (baseline)
+- Monolithic `loop()` at 2 kHz (`loopRate()` busy-wait); `dt` from `micros()` subtraction.
+- IMU: MPU6050 (I2C) / MPU9250 (SPI) libraries directly, on-chip DLPF off.
+- RX: PWM / PPM / SBUS / DSM selectable. Motors: software bit-banged OneShot125. Servos: `PWMServo`.
+- Hardcoded pins; LED on pin 13.
+
+## Stage 1 — STM32 BETA 1.3: hardware-abstraction port
+- **Goal:** run identical flight code on STM32F4/F7/H7, change only hardware I/O.
+- IMU → `IMU` library wrapper with chip auto-detect (ICM-42688-P/MPU-6000/ICM-20602/MPU-9250) + a "BALANCED" on-chip filter preset; `getIMUdata()` scaling/filter body unchanged.
+- RX → serial-only `SerialRx` library (IBus/SBUS, SBUS default); PWM/PPM/DSM paths removed. SBUS→µs now via the iNav formula instead of the Teensy `*0.615+895` mapping.
+- Motors → hardware-timer PWM (`MotorManager`, OneShot125, non-blocking); new `commandServos()` (`ServoManager`).
+- Pins → `BoardConfig` multi-board abstraction (5 boards) with `#error` on unknown target.
+- Only two edits inside flight-logic files: `Madgwick()` compile-time 6-DOF branch deleted (runtime guard keeps result identical); servo scaling 0–180° → 1000–2000 µs. Everything else byte-identical.
+
+## Stage 2 — SCHED: cooperative scheduler + link-state failsafe
+- **INav cooperative scheduler** (genuine INav fork; GPL): `loop()` → `scheduler()`; old inline sequence split into prioritized tasks — FLIGHT 2 kHz/REALTIME, RC 500 Hz/HIGH, TELEMETRY 100 Hz/MEDIUM, BLINK 2 Hz/LOW. `dt` now from `getTaskDeltaTime(TASK_SELF)` with a 0 < dt ≤ 10 ms clamp.
+- **SerialRx 4-layer failsafe** replaces the `800 < ch < 2200` range check: protocol flag, timeout, range, expiry — triggers on real link loss. Telemetry gains link-status string + `printSchedulerStats()` (CPU load, task rates).
+- **Board-alignment matrix** (`BoardAlignment`, Betaflight FLU vehicle frame): sensor-axis signs moved out of the Madgwick call into a runtime rotation matrix in `getIMUdata()`, applied identically to gyro, accel, and mag. *Composition is verified element-wise against Betaflight source for all 8 enums and guarded by AUnit tests. Hardware validation: symmetric CW180 (Air75) and the fleet's first asymmetric case, CW270+roll180 (Pavo Pico II), are `HW-validated` via the bench gate — see `BOARD_ALIGNMENT_REQUIREMENTS.md` for the per-target ledger and `IMU_ALIGNMENT_BENCH_PROCEDURE.md` for the gate that promotes one.*
+- **CRSF/ELRS** support (AETR→TAER remap, CH5-polarity branch), 3 STM32G4 boards added, motor value carried normalized 0–1 to support DShot300/600.
+- *Borrowed:* scheduler (INav←Betaflight/Cleanflight), FLU alignment + CRSF channel order (Betaflight).
+
+## Stage 3 — SCHED_MSP_INI: MSP telemetry, modal CLI, flash persistence
+- **MSP V1, read-only** (`$M` framing, XOR checksum): 11 handlers (identity ×4, status, RAW_IMU, MOTOR, RC, ATTITUDE, ANALOG, REBOOT). Self-IDs as `"DRHM"` 1.4.0 — does *not* impersonate INav. BF command numbering + reboot-mode byte (firmware / ROM DFU / UF2). No MSP write/set commands.
+- **Modal serial** — `TASK_TELEMETRY` → `TASK_SERIAL`: MSP by default; `#` (disarmed, 100 ms guard) enters a text CLI; `$` returns to MSP. CLI blocked while armed. (BF/INAV pattern.)
+- **CLI (EmbeddedCLI):** `help`, `status`, `version`, `set`, `diff`/`diff all`, `save`, `motor` (single-motor bench test, props off), `bb` (blackbox status / `bb dump` last-flight CSV), `cal`, `defaults`, `dump`, `exit` (returns to MSP, no reboot), `reboot`, `bl`. `set` exposes a 36-entry float param table with range clamping, plus `motor_output_reordering` (Betaflight-style CSV permutation) as a special case in set / diff / INI.
+- **Blackbox:** 100 Hz in-RAM ring sampled while armed (freezes at disarm); `bb dump` emits it as CSV over the CLI with per-row buffered writes that survive host-side USB-CDC stalls (retry of the unsent remainder; `BB_ABORT` sentinel if the host is gone). Host-side lossless single-pass fetch: `tools/bb_fetch.py` (verifies row count against `bb` status).
+- **Provenance:** firmware self-stamps its source commit via `build_id.h` — generated automatically by the core prebuild hook on every compile (git SHA + `-dirty`/`nogit` fail-closed, committer date) — surfaced by `version`, the `diff`/`diff all` header, and the boot banner. `diff all` emits paste-back `set name = value` lines; `tools/save_tune.sh` captures it to `tunes/` and refuses a `-dirty`/`nogit`/`unknown` build (a tune you can't rebuild isn't a backup). *Borrowed:* BF-style `diff`/`diff all` + `#`-comment paste-back; build-system-stamped identity (Betaflight/kernel).
+- **Persistence:** params saved as INI text to an internal-flash region via the bootloader's append-log format (`ini_flash_config`) — per-family F4/F7/G4/H7 primitives. **Not** LittleFS/SD/`pid.ini`. Boot `loadConfig()` overlays stored values on compile-time defaults. Boards without a config-flash region (Nucleos, NUCLEO_G474RE) are RAM-only.
+- **Betaflight-derived flight behaviors** (command/arming path, not PID math): throttle mid/expo Bézier curve (`thr_mid`/`thr_expo` + limit); QuadX numbering, `yaw_motors_reversed`, `motor_idle` floor; universal CH5 HIGH=arm on all protocols; arm-ready latch (`ARMING_DISABLED_ARM_SWITCH`); non-blocking wait-for-still gyro cal + first-arm re-cal; Bluejay ESC-beacon arm chime. Default FSR → 1000 DPS / 4G.
+- *Borrowed:* MSP framing/numbering, modal CLI, throttle curve, mixer params, arm latch, gyro cal (Betaflight/INav); arm chime (Bluejay). *Not present despite the prior README draft:* MSP V2, CRC8 DVB-S2, INav identity, MSP-driven tuning, LittleFS `pid.ini`.
+
+---
+*Stages (repo-root paths): `Versions/dRehmFlight_Teensy_BETA_1.3` → `Versions/dRehmFlight_STM32_BETA_1.3` → `Versions/dRehmFlight_STM32_SCHED` → `Versions/dRehmFlight_STM32_SCHED_MSP_INI`. Generated from direct source comparison; supersedes the per-stage READMEs where they disagree with the code.*
+
+---
+
+## Appendix — STM32 Robotics Core and Libraries
+
+All three STM32 stages build on **Arduino_Core_STM32** (the `STM32_Robotics` core, version
+`robo-2.1.0` or later) — a fork of the official STM32 Arduino core, refocused for
+flight-controller and robotics work. Repo: https://github.com/geosmall/Arduino_Core_STM32.
+Installable via Arduino Board Manager (URL:
+`https://github.com/geosmall/BoardManagerFiles/raw/main/package_stm32_robotics_index.json`);
+`robo-2.1.0` is the first release verified to build both flight sketches from a clean
+Board Manager install. The fork is what lets the unchanged dRehmFlight control law run
+across STM32F4/F7/G4/H7 from a single codebase.
+
+**Why the fork (vs the stock STM32 core):**
+- **Type-safe `Pin` struct** replaces Arduino integer pin numbering — `PA0`/`PB7` constants are
+  checked at compile time, catching pin/AF mistakes at the call site.
+- **Peripheral-aware AF resolution** fixes the upstream "ALT pin trap" (timers on multi-function
+  pins silently selecting the wrong alternate function); HardwareTimer, DShot, SPI, Wire, and
+  HardwareSerial all resolve AF against a specific peripheral instance.
+- **Four families, one library set** (F4/F7/G4/H7), a curated ~15-board set, UF2 bootloader
+  support, and HIL testing across the families.
+
+**Board abstraction** (not a `libraries/` entry — lives in `targets/`): each board has a
+`targets/<BOARD>.h` header in the `BoardConfig` namespace describing motor/servo/IMU/RC pins,
+sensor alignment, and (where present) the reserved config-flash region. `targets/config/
+ConfigTypes.h` defines `MotorManager` / `ServoManager`, which the sketches instantiate to drive
+outputs without touching pin numbers. Several target headers are generated from Betaflight unified
+targets via `extras/betaflight_converter/`.
+
+**Libraries leveraged by dRehmFlight** (in `Arduino_Core_STM32/libraries/` unless noted):
+
+| Library | Include | Used for | Stage |
+|---------|---------|----------|-------|
+| `imu` | `IMU.h` | IMU wrapper with chip auto-detect (ICM-42688-P, ICM-206xx, MPU-6000, MPU-9250) + presets; replaces direct MPU6050/MPU9250 driver calls | 1+ |
+| `SerialRx` | `SerialRx.h` | IBus / SBUS / CRSF parser, `channelToPWM()`, and the 4-layer link-loss failsafe | 1+ |
+| `TimerPWM` | `PWMOutputBank.h` | Hardware-timer PWM primitive (1 µs resolution) behind `MotorManager`/`ServoManager`; OneShot125 + standard servo PWM | 1+ |
+| `DShot` | — | DShot150/300/600 output with DMA (F4/F7/G4/H7); used by `MotorManager` on DShot targets | 2+ |
+| `BoardAlignment` | `BoardAlignment.h` | Chip + board rotation matrix (FLU vehicle frame) applied in `getIMUdata()` | 2+ |
+| `Scheduler` | `scheduler.h` | INav cooperative priority scheduler (INav ← Cleanflight/Betaflight; GPL) | 2+ |
+| `EmbeddedCLI` | `EmbeddedCLI.h` | Lightweight command registration for the modal CLI | 3 |
+| `minIniStorage` | `minIniStorage.h` | INI read/write over the `Storage` abstraction | 3 |
+| `Storage` / `LittleFS` / `SDFS` | `Storage.h` etc. | Unified filesystem API (SPI flash / SD) available on the core | 3 |
+| `libPrintf` | `printf.h` | Float-capable `sprintf_` (newlib-nano omits `%f`) | 3 |
+| `SEGGER_RTT` | `SEGGER_RTT.h` | Optional J-Link SWD diagnostic output (CI/bring-up; not used on the USB-serial flight path) | — |
+
+**Shared with the bootloader:** PID/parameter persistence in Stage 3 uses
+`bootloaders/ini_flash_config.h` — the same internal-flash append-log format the project's UF2
+bootloader uses — rather than a filesystem, so config survives reflash and is readable by both.
+
+Together these turn the original single-board Teensy firmware into a portable, multi-board STM32
+flight stack while leaving Nicholas Rehm's estimator and PID control law untouched.
