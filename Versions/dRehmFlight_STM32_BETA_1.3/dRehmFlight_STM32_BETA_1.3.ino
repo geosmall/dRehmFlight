@@ -85,6 +85,7 @@ Everyone that sends me pictures and videos of your flying creations! -Nick
 #include <IMU.h>           //IMU library for ICM42688P
 #include <SerialRx.h>      //Serial RX library for IBus/SBUS
 #include <PWMOutputBank.h> //TimerPWM for OneShot125 motor output
+#include "src/xcos2c/mixer.h" //xcos2c-generated X-quad mixer (used by controlMixer; see src/xcos2c/README.md)
 
 
 
@@ -247,7 +248,8 @@ int s1_command_PWM, s2_command_PWM, s3_command_PWM, s4_command_PWM, s5_command_P
 bool armedFly = false;
 
 // Create SPI instance using BoardConfig (software CS control)
-SPIClass spi_imu(BoardConfig::imu.spi.mosi_pin,
+SPIClass spi_imu(BoardConfig::imu.spi.instance,
+                 BoardConfig::imu.spi.mosi_pin,
                  BoardConfig::imu.spi.miso_pin,
                  BoardConfig::imu.spi.sclk_pin,
                  BoardConfig::imu.spi.get_ssel_pin());
@@ -260,6 +262,9 @@ MotorManager motors;
 
 //STM32: Servo outputs via ServoManager (50 Hz PWM)
 ServoManager servos;
+
+//xcos2c mixer context (scratch only; the X-quad mixer is stateless) — see controlMixer()
+mixer_ctx_t mixer_ctx;
 
 //========================================================================================================================//
 //                                                      VOID SETUP                                                        //                           
@@ -292,6 +297,9 @@ void setup() {
   channel_4_pwm = channel_4_fs;
   channel_5_pwm = channel_5_fs;
   channel_6_pwm = channel_6_fs;
+
+  //Initialize xcos2c generated mixer (no-op for the stateless X-quad model; part of the model API contract)
+  mixer_init(&mixer_ctx);
 
   //Initialize IMU communication
   IMUinit();
@@ -414,22 +422,33 @@ void controlMixer() {
    * Takes roll_PID, pitch_PID, and yaw_PID computed from the PID controller and appropriately mixes them for the desired
    * vehicle configuration. For example on a quadcopter, the left two motors should have +roll_PID while the right two motors
    * should have -roll_PID. Front two should have -pitch_PID and the back two should have +pitch_PID etc... every motor has
-   * normalized (0 to 1) thro_des command for throttle control. Can also apply direct unstabilized commands from the transmitter with 
-   * roll_passthru, pitch_passthru, and yaw_passthu. mX_command_scaled and sX_command scaled variables are used in scaleCommands() 
+   * normalized (0 to 1) thro_des command for throttle control. Can also apply direct unstabilized commands from the transmitter with
+   * roll_passthru, pitch_passthru, and yaw_passthu. mX_command_scaled and sX_command scaled variables are used in scaleCommands()
    * in preparation to be sent to the motor ESCs and servos.
-   * 
+   *
    *Relevant variables:
    *thro_des - direct thottle control
    *roll_PID, pitch_PID, yaw_PID - stabilized axis variables
    *roll_passthru, pitch_passthru, yaw_passthru - direct unstabilized command passthrough
    *channel_6_pwm - free auxillary channel, can be used to toggle things with an 'if' statement
    */
-   
-  //Quad mixing - EXAMPLE
-  m1_command_scaled = thro_des - pitch_PID + roll_PID + yaw_PID; //Front Left
-  m2_command_scaled = thro_des - pitch_PID - roll_PID - yaw_PID; //Front Right
-  m3_command_scaled = thro_des + pitch_PID - roll_PID + yaw_PID; //Back Right
-  m4_command_scaled = thro_des + pitch_PID + roll_PID - yaw_PID; //Back Left
+
+  //Quad mixing via the xcos2c-generated model (src/xcos2c, from the Xcos
+  //X-quad mixer diagram): same mixing law and float arithmetic order as the
+  //previous hand-written expressions — outputs are bit-identical (verified by
+  //the xcos2c equivalence gate, tests/equiv). Unclamped by design; clamping
+  //stays in scaleCommands().
+  mixer_in_t mixer_in;
+  mixer_out_t mixer_out;
+  mixer_in.thro_des  = thro_des;
+  mixer_in.roll_pid  = roll_PID;
+  mixer_in.pitch_pid = pitch_PID;
+  mixer_in.yaw_pid   = yaw_PID;
+  mixer_step(&mixer_ctx, &mixer_in, &mixer_out);
+  m1_command_scaled = mixer_out.m1; //Front Left
+  m2_command_scaled = mixer_out.m2; //Front Right
+  m3_command_scaled = mixer_out.m3; //Back Right
+  m4_command_scaled = mixer_out.m4; //Back Left
   m5_command_scaled = 0;
   m6_command_scaled = 0;
 
