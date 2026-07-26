@@ -247,8 +247,7 @@ int s1_command_PWM, s2_command_PWM, s3_command_PWM, s4_command_PWM, s5_command_P
 bool armedFly = false;
 
 // Create SPI instance using BoardConfig (software CS control)
-SPIClass spi_imu(BoardConfig::imu.spi.instance,
-                 BoardConfig::imu.spi.mosi_pin,
+SPIClass spi_imu(BoardConfig::imu.spi.mosi_pin,
                  BoardConfig::imu.spi.miso_pin,
                  BoardConfig::imu.spi.sclk_pin,
                  BoardConfig::imu.spi.get_ssel_pin());

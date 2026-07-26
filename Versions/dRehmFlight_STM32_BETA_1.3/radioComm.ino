@@ -15,7 +15,7 @@
 #include <SerialRx.h>
 
 // SerialRx library objects
-HardwareSerial SerialRC(BoardConfig::rc_receiver.instance, BoardConfig::rc_receiver.rx_pin, BoardConfig::rc_receiver.tx_pin);
+HardwareSerial SerialRC(BoardConfig::rc_receiver.rx_pin, BoardConfig::rc_receiver.tx_pin);
 SerialRx rx;
 
 // Raw channel data - populated by SerialRx adapter
