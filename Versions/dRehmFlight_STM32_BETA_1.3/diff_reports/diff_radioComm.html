@@ -92,7 +92,7 @@ code { font-family: inherit; }
 <td class="ln">17</td><td class="code" style="background-color:#efcb05;"><code><span style="color:#008000;">// SerialRx library objects</span></code></td>
 </tr><tr>
 <td class="ln"></td><td class="code" style="background-color:#c0c0c0;"><code>&nbsp;</code></td>
-<td class="ln">18</td><td class="code" style="background-color:#efcb05;"><code>HardwareSerial SerialRC(BoardConfig::rc_receiver.rx_pin, BoardConfig::rc_receiver.tx_pin);</code></td>
+<td class="ln">18</td><td class="code" style="background-color:#efcb05;"><code>HardwareSerial SerialRC(BoardConfig::rc_receiver.instance, BoardConfig::rc_receiver.rx_pin, BoardConfig::rc_receiver.tx_pin);</code></td>
 </tr><tr>
 <td class="ln"></td><td class="code" style="background-color:#c0c0c0;"><code>&nbsp;</code></td>
 <td class="ln">19</td><td class="code" style="background-color:#efcb05;"><code>SerialRx rx;</code></td>
