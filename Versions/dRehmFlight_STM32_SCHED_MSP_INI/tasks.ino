@@ -82,7 +82,7 @@ extern "C" void taskFlight(timeUs_t currentTimeUs) {
     getDesState();
 
     // PID Controller
-    controlANGLE();
+    controlANGLE2();
 
     // Actuator mixing and scaling
     controlMixer();
