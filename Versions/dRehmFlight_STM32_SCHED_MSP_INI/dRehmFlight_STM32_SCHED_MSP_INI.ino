@@ -218,6 +218,15 @@ float board_align_pitch_degrees = 0.0f;
 float board_align_roll_degrees  = 0.0f;
 BoardAlignment::Mat3f boardAlignMatrix;  //R_sensor_to_vehicle
 
+//Controller structure select (CLI 'controller'): 0 = controlANGLE (flattened angle PID,
+//stock dRehmFlight behavior), 1 = controlANGLE2 (cascaded angle->rate PID). Used as a
+//toggle (>0.5). Latched into useCascade ONCE at setup() after loadConfig(), so a runtime
+//'set controller' takes effect only after save + reboot — the control structure can never
+//switch mid-flight with stale integrator state. NOTE: the cascade reads the *_rate gains;
+//stock rate gains have limit-cycled small craft — tune inner P/D before first cascade flight.
+float controller_select = 0.0f;
+bool useCascade = false;  //boot-latched from controller_select; the flight task branches on this
+
 //Controller parameters (take note of defaults before modifying!):
 float i_limit = 25.0;     //Integrator saturation level, mostly for safety (default 25.0)
 float maxRoll = 30.0;     //Max roll angle in degrees for angle mode (maximum ~70 degrees), deg/sec for rate mode 
@@ -448,6 +457,10 @@ void setup() {
 
   //Initialize PID persistence (load saved values from config flash)
   loadConfig();
+
+  // Latch the controller structure once per boot (same pattern as board alignment below):
+  // 'set controller' at runtime only changes the param, never the running structure.
+  useCascade = (controller_select > 0.5f);
 
   // Build the sensor->vehicle alignment matrix AFTER loadConfig() so any INI-provided
   // board_align_* values (Betaflight align_board_*) are applied first. Composed in the

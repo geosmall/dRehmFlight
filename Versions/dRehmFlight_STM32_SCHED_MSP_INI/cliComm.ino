@@ -104,6 +104,8 @@ static void cmd_status(int argc, char** argv) {
     int loopHz = (dt > 0) ? (int)(1.0f / dt) : 0;
     Serial.printf("Armed: %s  Loop: %d Hz  Load: %d%%\n",
                   armedFly ? "YES" : "NO", loopHz, averageSystemLoadPercent);
+    // Active (boot-latched) structure — may differ from 'controller' until save + reboot
+    Serial.printf("Controller: %s\n", useCascade ? "controlANGLE2 (cascade)" : "controlANGLE");
 }
 
 //========================================================================================================================//
@@ -169,6 +171,9 @@ static const ParamEntry paramTable[] = {
     {"AccErrorX",      &AccErrorX,     -1, 1,  "IMU Cal"},
     {"AccErrorY",      &AccErrorY,     -1, 1,  "IMU Cal"},
     {"AccErrorZ",      &AccErrorZ,     -1, 1,  "IMU Cal"},
+    // Controller structure: 0 = controlANGLE (flattened), 1 = controlANGLE2 (cascade).
+    // Boot-latched — takes effect after save + reboot ('status' shows the active structure).
+    {"controller",     &controller_select, 0, 1, "Controller"},
 };
 static constexpr int PARAM_COUNT = sizeof(paramTable) / sizeof(paramTable[0]);
 

@@ -81,8 +81,13 @@ extern "C" void taskFlight(timeUs_t currentTimeUs) {
     // Compute desired state
     getDesState();
 
-    // PID Controller
-    controlANGLE2();
+    // PID Controller — structure selected by the persistent 'controller' param,
+    // boot-latched into useCascade at setup() (never switches while running)
+    if (useCascade) {
+        controlANGLE2();
+    } else {
+        controlANGLE();
+    }
 
     // Actuator mixing and scaling
     controlMixer();
