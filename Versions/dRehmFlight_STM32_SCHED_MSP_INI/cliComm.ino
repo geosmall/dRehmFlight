@@ -107,7 +107,7 @@ static void cmd_status(int argc, char** argv) {
 }
 
 //========================================================================================================================//
-// Parameter Table (25 entries — shared with 'set', 'save', 'defaults')
+// Parameter Table (shared with 'set', 'save', 'defaults')
 //========================================================================================================================//
 
 struct ParamEntry {
@@ -118,6 +118,9 @@ struct ParamEntry {
     const char* group;
 };
 
+// Keep each group's entries contiguous. The configurator derives UI section
+// order (and .ini export order) from first occurrence of each group name in
+// bare 'set' output, which follows this table's order.
 static const ParamEntry paramTable[] = {
     // PID gains — angle mode
     {"Kp_roll_angle",  &Kp_roll_angle,  0, 10, "PID Angle"},
