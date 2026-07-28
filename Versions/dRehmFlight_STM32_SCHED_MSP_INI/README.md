@@ -134,7 +134,7 @@ dual-bank, D-cache sync). This is **not** a filesystem — there is no LittleFS,
 - **No-config-flash boards** (Nucleos, NUCLEO_G474RE): `save`/`dump` print
   `No config flash on this board`; tuning is RAM-only and lost on reboot.
 
-### 5. Parameter table (33 entries)
+### 5. Parameter table
 
 `set`, `save`, `defaults`, and persistence all operate on one table (`cliComm.ino`):
 
@@ -147,11 +147,22 @@ dual-bank, D-cache sync). This is **not** a filesystem — there is no LittleFS,
 | Limits | `i_limit`, `maxRoll`, `maxPitch`, `maxYaw` |
 | Throttle | `thr_mid`, `thr_expo`, `throttle_limit` |
 | Mixer | `yaw_motors_reversed`, `motor_idle` |
+| Board | `align_board_roll`, `align_board_pitch`, `align_board_yaw` |
 | Filters | `B_madgwick`, `B_accel`, `B_gyro`, `B_mag` |
 | IMU Cal | `AccErrorX`, `AccErrorY`, `AccErrorZ` |
+| Controller | `controller` |
+
+(`motor_output_reordering`, a CSV permutation, is handled alongside the table as a special
+case in `set`/`diff`/INI.)
 
 Gyro bias is **not** in this table — it is measured at boot (and at first arm) by a
 non-blocking wait-for-still calibration and is not persisted.
+
+`controller` selects the PID structure: `0` = `controlANGLE()` (default, stock dRehmFlight
+behavior), `1` = `controlANGLE2()` (cascade). It is latched once at boot — `set`, `save`,
+reboot to change — so the structure can never switch mid-flight; `status` shows the active
+structure. Before flying the cascade, read the Controller Selection caution in
+`QUAD_TUNING.md`: stock `*_rate` gains limit-cycle small craft.
 
 ### 6. Betaflight-derived flight behaviors (new since SCHED)
 

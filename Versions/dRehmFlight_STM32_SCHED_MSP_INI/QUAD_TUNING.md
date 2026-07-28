@@ -1,6 +1,26 @@
 # Quad PID Tuning Notes
 
-Pre-flight tuning analysis for two vehicle classes. All values are starting points based on physics reasoning, not empirical data. Real tuning comes from flying.
+Pre-flight tuning analysis for two vehicle classes. Except where marked flight-validated, values are starting points based on physics reasoning, not empirical data. Real tuning comes from flying.
+
+## Controller Selection (flight-validated)
+
+The persistent `controller` param selects the control structure at boot:
+
+- `controller = 0` (default): `controlANGLE()` — flattened angle PID, stock dRehmFlight behavior.
+- `controller = 1`: `controlANGLE2()` — cascaded angle→rate PID with a full inner rate loop.
+
+The value is latched once at boot: `set controller = 1`, `save`, then reboot. `status` reports the active structure; the structure never changes mid-flight.
+
+**Caution — stock rate gains limit-cycle small craft on the cascade.** The swap to `controlANGLE2()` at shipped `*_rate` gains produced an immediate fixed-frequency oscillation on both craft tested (Air75: 10 Hz; Pavo Pico II: 8–9 Hz). Before the first cascade flight, cut `Kp_*_rate` to half stock or below, then tune inner-first: halve `Kp_*_rate` per oscillating axis until the cycle breaks, set `Kd_*_rate ≈ Kp_rate/(2π·f_cycle)` (gate on motor temperature by touch), then walk `Kp_*_rate` back up.
+
+Flight-validated cascade operating points (outer angle gains per each craft's saved tune):
+
+| Craft | Kp_rate | Ki_rate | Kd_rate | B_loop | Status |
+|-------|---------|---------|---------|--------|--------|
+| Air75 (75mm 1S) | 0.10 | 0.2 | 0.001 | 0.9 | Validated; beats `controlANGLE()` in calm and active flight |
+| Pavo Pico II | 0.075 | 0.2 | 0.001 | 0.9 | Provisional (calm-air verification pending) |
+
+**Pavo Pico II strongly wants the cascade.** On `controlANGLE()` it is flyable only at reduced gains (roll Kp 0.15 / Kd 0.035) with a visible residual ripple and soft attitude hold — the flattened controller's rate damping hits a phase-lag gain ceiling at 6–8 Hz on this airframe. On `controlANGLE2()` with inner D it holds 2× that rate feedback cleanly and set the craft's best recorded hover. The Air75 flies well either way; the cascade is a documented option on both.
 
 ## Signal Path
 
