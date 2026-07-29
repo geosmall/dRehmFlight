@@ -85,9 +85,15 @@ them is how flyaways happen:
 2. **Motor order / direction check** (`tools/motor_order_check.py`, or the
    CLI `motor <1-4> <pct>` single-motor bench test) — props off, verify
    pad→position mapping and spin direction against your frame.
-3. **Props-off arm test** — arm, verify throttle response and throttle-cut
+3. **Accelerometer calibration** — a fresh install has zero accel offsets
+   and will hold a constant lean of a few degrees in angle mode. In
+   `SCHED_MSP_INI`: CLI `cal` with the craft level and still (auto-saves).
+   The earlier lineage stages have no `cal` command — they use upstream
+   dRehmFlight's manual procedure: run `calculate_IMU_error()`, read the
+   printed offsets, and paste them into the sketch source.
+4. **Props-off arm test** — arm, verify throttle response and throttle-cut
    on all four motors, verify disarm.
-4. **First hover** — props on only after 1–3 pass, in a safe area, low, brief.
+5. **First hover** — props on only after 1–4 pass, in a safe area, low, brief.
 
 The `align_board_*` and `motor_output_reordering` parameters are runtime
 (`set`/`save`) — most boards can be adapted without recompiling, but every
