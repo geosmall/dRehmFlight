@@ -93,6 +93,10 @@ The `align_board_*` and `motor_output_reordering` parameters are runtime
 (`set`/`save`) — most boards can be adapted without recompiling, but every
 alignment change re-triggers gate 1.
 
+Converting a stock Betaflight craft? A worked end-to-end walkthrough —
+bootloader install, radio setup, calibration — for the BETAFPV Air75 is in
+`Versions/dRehmFlight_STM32_SCHED_MSP_INI/README.md` → "First Flight".
+
 ## Tuning and tools
 
 - All gains and filters are runtime CLI parameters: `#` enters the CLI,

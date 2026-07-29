@@ -280,22 +280,97 @@ Arduino Board Manager / arduino-cli:
 INDEX=https://github.com/geosmall/BoardManagerFiles/raw/main/package_stm32_robotics_index.json
 arduino-cli core update-index --additional-urls "$INDEX"
 arduino-cli core install STM32_Robotics:stm32 --additional-urls "$INDEX"
-arduino-cli compile --fqbn STM32_Robotics:stm32:FlightCtr:pnum=BEFH_BETAFPVF405 <path-to-this-sketch>
+arduino-cli compile --fqbn "STM32_Robotics:stm32:FlightCtr:pnum=BEFH_BETAFPVF405,usb=CDCgen" <path-to-this-sketch>
 ```
+
+Flight-controller targets need **`usb=CDCgen`** (Arduino IDE: Tools → USB support →
+"CDC (generic 'Serial' supersede U(S)ART)") — the default is *None*, which builds with no
+USB serial: no MSP, no CLI. Nucleo bench targets use the ST-Link VCOM instead and don't
+need it.
 
 (Arduino IDE: add the index URL under Preferences → Additional Board Manager URLs, install
 "STM32 Robotics Core", pick the board under Tools.)
 
 ```bash
 # From the repository root
-arduino-cli compile --fqbn STM32_Robotics:stm32:FlightCtr:pnum=OPEN_REVO Versions/dRehmFlight_STM32_SCHED_MSP_INI
+arduino-cli compile --fqbn "STM32_Robotics:stm32:FlightCtr:pnum=OPEN_REVO,usb=CDCgen" Versions/dRehmFlight_STM32_SCHED_MSP_INI
 
 # Other targets
-arduino-cli compile --fqbn STM32_Robotics:stm32:FlightCtr:pnum=BKMN_NERO Versions/dRehmFlight_STM32_SCHED_MSP_INI
-arduino-cli compile --fqbn STM32_Robotics:stm32:FlightCtr:pnum=MATEK_H743VI Versions/dRehmFlight_STM32_SCHED_MSP_INI
-arduino-cli compile --fqbn STM32_Robotics:stm32:FlightCtr:pnum=DEVEBOX_H743 Versions/dRehmFlight_STM32_SCHED_MSP_INI
+arduino-cli compile --fqbn "STM32_Robotics:stm32:FlightCtr:pnum=BKMN_NERO,usb=CDCgen" Versions/dRehmFlight_STM32_SCHED_MSP_INI
+arduino-cli compile --fqbn "STM32_Robotics:stm32:FlightCtr:pnum=MATEK_H743VI,usb=CDCgen" Versions/dRehmFlight_STM32_SCHED_MSP_INI
+arduino-cli compile --fqbn "STM32_Robotics:stm32:FlightCtr:pnum=DEVEBOX_H743,usb=CDCgen" Versions/dRehmFlight_STM32_SCHED_MSP_INI
 arduino-cli compile --fqbn STM32_Robotics:stm32:Nucleo_64:pnum=NUCLEO_F411RE Versions/dRehmFlight_STM32_SCHED_MSP_INI
 ```
+
+## First Flight — Converting a Stock BETAFPV Air75 (EdgeTX + ELRS)
+
+A worked end-to-end conversion for a stock Air75 (`BEFH_BETAFPVG473` target) and any
+EdgeTX-based ELRS transmitter. The compiled-in defaults **are** the flight-validated Air75
+tune — no gain changes are needed for a first hover. Four things stand between a stock
+craft and that hover: the bootloader, the firmware, the radio setup, and accelerometer
+calibration.
+
+### 1. Archive the factory firmware
+
+From the Betaflight Configurator CLI, save the output of `diff all` to a file before
+touching anything — this is your rollback path if you want the craft back on Betaflight.
+
+### 2. Install the UF2 bootloader (one-time, over USB)
+
+The Air75 ships with Betaflight and no UF2 bootloader. Install it first — no debug probe
+needed. Follow **"Via dfu-util"** in the
+[core bootloaders README](https://github.com/geosmall/Arduino_Core_STM32/blob/dev/bootloaders/README.md):
+Betaflight CLI `bl` → board enumerates as ROM DFU → mass-erase + flash
+`bootuf2-betafpv_g473-v*.bin`. The mass-erase is safe on a board with no reset button:
+with no valid application present, the bootloader stays in UF2 mode automatically, and the
+board mounts a `G473BOOT` USB drive ready for firmware.
+
+### 3. Build and flash dRehmFlight
+
+```bash
+arduino-cli compile --upload \
+  --fqbn "STM32_Robotics:stm32:FlightCtr:pnum=BEFH_BETAFPVG473,upload_method=bootuf2Method,usb=CDCgen" \
+  Versions/dRehmFlight_STM32_SCHED_MSP_INI
+```
+
+**`usb=CDCgen` is required** — the default USB setting is *None*, which builds a working
+flight controller with no USB serial: no MSP, no CLI, no way to calibrate. In the Arduino
+IDE this is **Tools → USB support → "CDC (generic 'Serial' supersede U(S)ART)"**.
+
+The board must be in the UF2 bootloader when uploading (a fresh conversion already is;
+thereafter, type `bl` in the CLI).
+
+### 4. Radio setup (EdgeTX)
+
+- **Bind** the craft's ELRS receiver to your transmitter the standard ELRS way (bind
+  phrase or triple power-cycle). Binding lives in the receiver and is unaffected by the
+  flight-controller firmware swap.
+- **Channel order**: this firmware expects **TAER** (see Radio Channel Mapping above).
+  EdgeTX models default to **AETR** — set your model's channel mapping so CH1=Throttle,
+  CH2=Aileron/Roll, CH3=Elevator/Pitch, CH4=Rudder/Yaw. The symptom of a wrong order is
+  a craft that refuses to arm: the throttle-low arming gate sees a centered stick (~1500)
+  on CH1.
+- **CH5 = arm** on a two-position switch: LOW = disarmed, HIGH = armed.
+
+### 5. Bench checks (props OFF, USB connected)
+
+Open a serial terminal at 115200 and type `#` to enter the CLI:
+
+- `status` — should report `Controller: controlANGLE` (the correct default).
+- `cal` — with the craft **level and still**. This measures and auto-saves the
+  accelerometer offsets; skipping it leaves the craft holding a constant lean of a few
+  degrees in angle mode. Gyro bias needs no command — it is measured automatically at
+  boot and re-measured at first arm.
+
+### 6. Safety gates, then fly
+
+Work through **"Before you fly — safety gates"** in the
+[repository README](../../README.md) — motor order/direction check, props-off arm test —
+before the first hover. Then: props on, angle mode, small hop over a soft surface. Stick
+authority is limited to ±30° bank — expect gentle, self-leveling behavior. Fly the stock
+tune before changing any gain; the defaults are the validated Air75 operating point. For
+the optional cascade controller (`controller = 1`), see QUAD_TUNING.md → Controller
+Selection **after** the craft has flown clean on the defaults.
 
 ## Known Limitations
 
