@@ -1527,8 +1527,8 @@ void switchRollYaw(int reverseRoll, int reverseYaw) {
 void throttleCut() {
   //DESCRIPTION: Directly set actuator outputs to minimum value if triggered
   /*
-      Monitors the state of radio command channel_5_pwm and directly sets the mx_command_PWM values to minimum (120 is
-      minimum for oneshot125 protocol, 0 is minimum for standard PWM servo library used) if channel 5 is high. This is the last function
+      Monitors the state of radio command channel_5_pwm and directly sets the mx_command_scaled values to 0.0 when the cut
+      is active (OneShot125 then emits its 125 us minimum pulse; DShot emits the throttle-0 disarm token). This is the last function
       called before commandMotors() is called so that the last thing checked is if the user is giving permission to command
       the motors to anything other than minimum value. Safety first.
 

@@ -235,6 +235,16 @@ static void motorReorderToStr(char* buf) {
 // On boards with BOARD_FLASH_CONFIG_START (flight controllers with UF2 bootloader),
 // parameters are stored in a dedicated internal flash region using the same append-log
 // format as the bootloader. On boards without it (Nucleos), tuning is RAM-only.
+//
+// The config region only sits in free flash under the UF2-bootloader memory layout
+// (app linked at BOARD_FLASH_APP_START, above the config region). A direct-flash build
+// (J-Link/SWD) links the app at the flash base, where the config region overlaps live
+// code — a save would erase and overwrite the running application without error.
+// BL_BOOTUF2 is defined only for upload_method=bootuf2Method builds, so it cleanly
+// discriminates the layout: gate every config-flash access on both.
+#if defined(BOARD_FLASH_CONFIG_START) && defined(BL_BOOTUF2)
+  #define USE_CONFIG_FLASH 1
+#endif
 
 // Parse INI text from buffer and apply matching key=value pairs to paramTable
 static void applyIniFromBuffer(const uint8_t *buf, uint32_t size) {
@@ -306,7 +316,7 @@ static uint32_t formatIniText(char *buf, uint32_t buf_size) {
     return (uint32_t)(p - buf);
 }
 
-#ifdef BOARD_FLASH_CONFIG_START
+#ifdef USE_CONFIG_FLASH
 //========================================================================================================================//
 // Per-Family HAL Flash Primitives (required by ini_flash_config.h)
 //========================================================================================================================//
@@ -459,7 +469,7 @@ static bool ini_program(uint32_t addr, const uint8_t *data, uint32_t len) {
 // Shared append-log scan, read, and write logic
 #include <ini_flash_config.h>
 
-#endif // BOARD_FLASH_CONFIG_START
+#endif // USE_CONFIG_FLASH
 
 // Initialize and load saved config (called from setup())
 void loadConfig() {
@@ -467,7 +477,7 @@ void loadConfig() {
     for (int i = 0; i < PARAM_COUNT; i++) {
         paramDefaults[i] = *paramTable[i].ptr;
     }
-#ifdef BOARD_FLASH_CONFIG_START
+#ifdef USE_CONFIG_FLASH
     static uint8_t iniBuf[1024];
     uint32_t iniSize = board_flash_ini_read(iniBuf, sizeof(iniBuf));
     if (iniSize > 0) {
@@ -637,7 +647,7 @@ static void cmd_cal(int argc, char** argv) {
 
 static void cmd_save(int argc, char** argv) {
     (void)argc; (void)argv;
-#ifdef BOARD_FLASH_CONFIG_START
+#ifdef USE_CONFIG_FLASH
     static char iniBuf[1024];
     uint32_t len = formatIniText(iniBuf, sizeof(iniBuf));
     if (board_flash_ini_write_block((const uint8_t *)iniBuf, len, 0, len, 0, 1)) {
@@ -646,7 +656,7 @@ static void cmd_save(int argc, char** argv) {
         Serial.println("Save failed");
     }
 #else
-    Serial.println("No config flash on this board");
+    Serial.println("Config flash requires a UF2 bootloader build");
 #endif
 }
 
@@ -663,7 +673,7 @@ static void cmd_defaults(int argc, char** argv) {
 
 static void cmd_dump(int argc, char** argv) {
     (void)argc; (void)argv;
-#ifdef BOARD_FLASH_CONFIG_START
+#ifdef USE_CONFIG_FLASH
     static uint8_t buf[1024];
     uint32_t size = board_flash_ini_read(buf, sizeof(buf) - 1);
     if (size == 0) {
@@ -673,7 +683,7 @@ static void cmd_dump(int argc, char** argv) {
     buf[size] = '\0';
     Serial.println((const char *)buf);
 #else
-    Serial.println("No config flash on this board");
+    Serial.println("Config flash requires a UF2 bootloader build");
 #endif
 }
 
