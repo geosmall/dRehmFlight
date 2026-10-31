@@ -38,6 +38,9 @@
 #elif defined(ARDUINO_BEFH_BETAFPVF405)
   static const char BOARD_ID[] = "BFF4";
   static const char TARGET_NAME[] = "BETAFPV-F405";
+#elif defined(ARDUINO_MTKS_MATEKF405TE)
+  static const char BOARD_ID[] = "MTF4";
+  static const char TARGET_NAME[] = "MATEK-F405TE";
 #elif defined(ARDUINO_WEACT_G474CE)
   static const char BOARD_ID[] = "WG47";
   static const char TARGET_NAME[] = "WEACT-G474";

@@ -98,6 +98,8 @@ Everyone that sends me pictures and videos of your flying creations! -Nick
   #include "targets/BEFH-BETAFPVG473.h"  //BetaFPV G473 flight controller (ICM42688P 6-DOF)
 #elif defined(ARDUINO_BEFH_BETAFPVF405)
   #include "targets/BEFH-BETAFPVF405.h"  //BetaFPV F405 flight controller / Pavo Pico II (ICM42688P 6-DOF)
+#elif defined(ARDUINO_MTKS_MATEKF405TE)
+  #include "targets/MTKS-MATEKF405TE_SD.h"  //Matek F405-WMO flight controller (ICM42688P 6-DOF, SBUS via onboard inverter)
 #elif defined(ARDUINO_WEACT_G474CE)
   #include "targets/WEACT_G474_HIL007.h"  //WeAct G474CE (ICM42688P breadboard, 2MHz SPI)
 #elif defined(ARDUINO_NUCLEO_G474RE)
@@ -594,6 +596,13 @@ void IMUinit() {
    * Supports ICM42688P, MPU-6000, MPU-9250 auto-detection.
    * Honors user-defined GYRO_SCALE and ACCEL_SCALE settings.
    */
+
+#if defined(ARDUINO_MTKS_MATEKF405TE)
+  // MAX7456 OSD shares SPI1 with the IMU: deselect it before the first SPI1
+  // transaction so it cannot drive MISO during chip detection.
+  pinMode(BoardConfig::osd_cs_pin, OUTPUT);
+  digitalWrite(BoardConfig::osd_cs_pin, HIGH);
+#endif
 
   // Init + chip detection (Init() auto-detects chip type)
   if (imu.Init(spi_imu, BoardConfig::imu.spi.cs_pin, BoardConfig::imu.spi.freq_hz) != IMU::Result::OK) {
