@@ -147,7 +147,7 @@ extern "C" void taskBlink(timeUs_t currentTimeUs) {
     UNUSED(currentTimeUs);
 
     if (!gyroCalibrated) {          //gyro cal in progress (boot/first-arm): solid ON = hold still, not armable
-        digitalWrite(ledPin, HIGH);
+        setLed(true);
         return;
     }
 
@@ -170,5 +170,5 @@ extern "C" void taskBlink(timeUs_t currentTimeUs) {
 
     static bool ledState = false;
     ledState = !ledState;
-    digitalWrite(ledPin, ledState);  //normal heartbeat once calibrated
+    setLed(ledState);  //normal heartbeat once calibrated
 }

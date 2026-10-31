@@ -718,6 +718,9 @@ static void printProvenanceHeader(const char* tag) {
 static void cmd_version(int argc, char** argv) {
     (void)argc; (void)argv;
     printProvenanceHeader("dRehmFlight");
+    char buf[48];
+    sprintf_(buf, "# imu: %s (WHO_AM_I 0x%02X)", imu.GetChipName(), (unsigned)imu.GetWhoAmI());
+    Serial.println(buf);
 }
 
 static void cmd_diff(int argc, char** argv) {

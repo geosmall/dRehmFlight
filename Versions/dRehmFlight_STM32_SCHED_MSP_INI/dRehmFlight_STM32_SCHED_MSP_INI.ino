@@ -319,6 +319,11 @@ const Pin servo7Pin = NC_PIN;   // Not yet assigned
 //LED:
 const Pin ledPin = BoardConfig::status_leds.led1_pin;  // primary status LED; single-LED targets define only led1 (matches dRehmFlight_STM32_SCHED)
 
+//Drive the status LED by meaning (on/off), honoring the target's polarity (BoardConfig::status_leds.active_low)
+static inline void setLed(bool on) {
+  digitalWrite(ledPin, (on != BoardConfig::status_leds.active_low) ? HIGH : LOW);
+}
+
 
 
 //========================================================================================================================//
@@ -406,7 +411,7 @@ void setup() {
   //servo1.attach(servo1Pin, 900, 2100);
 
   //Set built in LED to turn on to signal startup
-  digitalWrite(ledPin, HIGH);
+  setLed(true);
 
   delay(5);
 
@@ -1424,7 +1429,7 @@ void calibrateESCs() {
       current_time = micros();      
       dt = (current_time - prev_time)/1000000.0;
     
-      digitalWrite(ledPin, HIGH); //LED on to indicate we are not in main loop
+      setLed(true); //LED on to indicate we are not in main loop
 
       getCommands(); //Pulls current available radio commands
       //SerialRx failsafe: set defaults on signal loss
@@ -1629,9 +1634,9 @@ void loopRate(int freq) {
 void setupBlink(int numBlinks,int upTime, int downTime) {
   //DESCRIPTION: Simple function to make LED on board blink as desired
   for (int j = 1; j<= numBlinks; j++) {
-    digitalWrite(ledPin, LOW);
+    setLed(false);
     delay(downTime);
-    digitalWrite(ledPin, HIGH);
+    setLed(true);
     delay(upTime);
   }
 }
