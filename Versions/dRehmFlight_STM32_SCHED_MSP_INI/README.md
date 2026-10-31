@@ -284,9 +284,9 @@ arduino-cli compile --fqbn "STM32_Robotics:stm32:FlightCtr:pnum=BEFH_BETAFPVF405
 ```
 
 Flight-controller targets need **`usb=CDCgen`** (Arduino IDE: Tools → USB support →
-"CDC (generic 'Serial' supersede U(S)ART)") — the default is *None*, which builds with no
-USB serial: no MSP, no CLI. Nucleo bench targets use the ST-Link VCOM instead and don't
-need it.
+"CDC (generic 'Serial' supersede U(S)ART)"). Set it explicitly: cores up to robo-2.1.0
+default to *None*, which builds with no USB serial: no MSP, no CLI. Nucleo bench targets
+use the ST-Link VCOM instead and don't need it.
 
 (Arduino IDE: add the index URL under Preferences → Additional Board Manager URLs, install
 "STM32 Robotics Core", pick the board under Tools.)
@@ -333,9 +333,10 @@ arduino-cli compile --upload \
   Versions/dRehmFlight_STM32_SCHED_MSP_INI
 ```
 
-**`usb=CDCgen` is required** — the default USB setting is *None*, which builds a working
-flight controller with no USB serial: no MSP, no CLI, no way to calibrate. In the Arduino
-IDE this is **Tools → USB support → "CDC (generic 'Serial' supersede U(S)ART)"**.
+**USB support must be `usb=CDCgen`**; set it explicitly, since cores up to robo-2.1.0
+default to *None*. *None* builds a working flight controller with no USB serial: no MSP,
+no CLI, no way to calibrate, and no `bl` exit to the bootloader. In the Arduino IDE this is **Tools → USB support → "CDC
+(generic 'Serial' supersede U(S)ART)"**.
 
 The board must be in the UF2 bootloader when uploading (a fresh conversion already is;
 thereafter, type `bl` in the CLI).
