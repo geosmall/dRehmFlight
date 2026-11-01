@@ -38,6 +38,7 @@ changes at power-off.
 |-------|-----|-----|-------------|
 | BEFH_BETAFPVF405 (Pavo Pico II AIO) | STM32F405 | ICM-42688-P | Internal flash |
 | BEFH_BETAFPVG473 (Air75 AIO) | STM32G473 | ICM-42688-P | Internal flash |
+| MTKS_MATEKF405TE (Matek F405-WMO) | STM32F405 | ICM-42688-P | Internal flash |
 | OPEN_REVO | STM32F405 | MPU-6000 | Internal flash |
 | BKMN_NERO | STM32F722 | ICM-20602 | Internal flash |
 | JHEF_JHEF411 (Noxe F411) | STM32F411 | ICM-42688-P | Internal flash |
